@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SECTIONS } from '../data/gearCatalog.js';
 import { itemOf, store } from '../lib/store/index.js';
-import { countByStatus, ownedCount, readiness } from '../lib/stats.js';
+import { countByStatus, ownedCount, readiness, sectionStatus } from '../lib/stats.js';
 import { TINTS } from './RiderFigure.jsx';
 import RiderStage from './RiderStage.jsx';
 import CountUp from './CountUp.jsx';
@@ -15,6 +15,30 @@ function Legend() {
           <i style={{ background: t.fill, borderColor: t.stroke }} /> {t.label}
         </span>
       ))}
+    </div>
+  );
+}
+
+// One chip per section with its status colour; works with any figure, including Spline scenes.
+function StatusRail({ member, selected, onSelect }) {
+  return (
+    <div className="status-rail" role="toolbar" aria-label="Gear sections">
+      {SECTIONS.map((s) => {
+        const tint = TINTS[sectionStatus(member, s.id)];
+        return (
+          <button
+            key={s.id}
+            type="button"
+            className={`rail-chip${selected === s.id ? ' on' : ''}`}
+            style={{ '--fill': tint.fill, '--stroke': tint.stroke }}
+            title={`${s.label}: ${tint.label}`}
+            aria-label={`${s.label}: ${tint.label}`}
+            onClick={() => onSelect(s.id)}
+          >
+            <span aria-hidden>{s.emoji}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -63,6 +87,7 @@ export default function GearView({ tripCode, member, me, members, requests, edit
       <div className="figure-col">
         <div className="card figure-card">
           <RiderStage member={member} selected={[...open].at(-1)} onSelect={selectFromFigure} />
+          <StatusRail member={member} selected={[...open].at(-1)} onSelect={selectFromFigure} />
           <div className="stat-row">
             <div><b><CountUp value={ownedCount(member)} /></b><span>owned</span></div>
             <div><b><CountUp value={counts.borrow + counts.borrowed} /></b><span>borrow</span></div>

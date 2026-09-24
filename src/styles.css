@@ -246,6 +246,23 @@ input, select { font: inherit; color: inherit; }
 .figure-svg { width: 100%; height: auto; display: block; overflow: visible; }
 .rider-3d .canvas-wrap { width: 100%; border-radius: 14px; overflow: hidden; touch-action: pan-y; }
 .rider-3d canvas { cursor: grab; }
+.rider-spline .canvas-wrap { position: relative; width: 100%; border-radius: 14px; overflow: hidden; }
+.spline-canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity 0.5s; }
+.rider-spline .canvas-wrap.ready .spline-canvas { opacity: 1; }
+.spline-loading {
+  position: absolute; inset: 0; border-radius: 14px;
+  background: linear-gradient(100deg, #eef5fd 30%, #ffffff 50%, #eef5fd 70%) 0 0 / 300% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { to { background-position: -300% 0; } }
+
+.status-rail { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.rail-chip {
+  width: 38px; height: 38px; border-radius: 12px; border: 2px solid var(--stroke); background: var(--fill);
+  font-size: 1.1rem; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+}
+.rail-chip:hover { transform: translateY(-2px); }
+.rail-chip.on { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--stroke); }
 .rider-3d canvas:active { cursor: grabbing; }
 .ground-shadow { fill: rgba(60, 100, 160, 0.14); }
 

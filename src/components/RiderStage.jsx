@@ -2,6 +2,9 @@ import { Component, lazy, Suspense } from 'react';
 import RiderFigure from './RiderFigure.jsx';
 
 const Rider3D = lazy(() => import('./Rider3D.jsx'));
+const RiderSpline = lazy(() => import('./RiderSpline.jsx'));
+// A rider scene designed in Spline, when configured (see README).
+const hasSplineScene = Boolean(import.meta.env.VITE_SPLINE_SCENE);
 
 let webglOk;
 function canUse3D() {
@@ -18,7 +21,7 @@ function canUse3D() {
   return webglOk;
 }
 
-// If the 3D scene throws (e.g. WebGL context lost), fall back to the SVG figure.
+// If a scene throws (load failure, WebGL context lost), render the fallback instead.
 class Fallback extends Component {
   state = { failed: false };
   static getDerivedStateFromError() {
@@ -29,14 +32,23 @@ class Fallback extends Component {
   }
 }
 
-// Real 3D rider when the browser supports it, 2.5D SVG rider while loading or as a fallback.
+// Spline scene if configured, else the built-in 3D rider, else (no WebGL / ?flat=1) the 2.5D SVG rider.
+// Each level falls back to the next if it fails; the SVG rider shows while 3D code loads.
 export default function RiderStage(props) {
   const flat = <RiderFigure {...props} />;
   if (!canUse3D()) return flat;
-  return (
+  const builtIn = (
     <Fallback fallback={flat}>
       <Suspense fallback={flat}>
         <Rider3D {...props} />
+      </Suspense>
+    </Fallback>
+  );
+  if (!hasSplineScene) return builtIn;
+  return (
+    <Fallback fallback={builtIn}>
+      <Suspense fallback={flat}>
+        <RiderSpline {...props} />
       </Suspense>
     </Fallback>
   );
