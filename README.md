@@ -2,10 +2,10 @@
 
 A light, fun gear tracker for a group ski/snowboard trip.
 
-- **My Gear**: a 2.5D rider figure. Tap a body part (head, upper body, hands, legs, feet, board/skis, backpack) to open that section's gear dropdown. Mark each item **Own**, **Buy**, **Borrow** or **Skip**, add notes (brand/size), and flag what you're **happy to lend**. The figure tints by status.
+- **My Gear**: a real 3D rider (React Three Fiber). Drag to spin it, and tap a body part (head, upper body, hands, legs, feet, board/skis, backpack) to open that section's gear dropdown. The 3D code loads lazily. Browsers without WebGL (or `?flat=1`) get the lightweight 2.5D SVG rider instead. Mark each item **Own**, **Buy**, **Borrow** or **Skip**, add notes (brand/size), and flag what you're **happy to lend**. The figure tints by status.
 - **My to-do**: what you still need to buy or borrow, and which friends can lend each item, with one-tap requests.
 - **Crew**: everyone's figure and progress, plus a **"Who has…?"** search.
-- **Leaderboard**: ranked by number of items owned, with a podium and badges (🏆 Fully Geared, 🤝 Generous, 🛒 Shopper).
+- **Leaderboard**: ranked by number of items owned, with an animated podium, rows that slide when ranks change, and badges (🏆 Fully Geared, 🤝 Generous, 🛒 Shopper). You get confetti when you become Fully Geared or lend something.
 - **Requests**: ask to borrow, and the owner taps **Lend it** or **Decline**. Accepted items show up as "borrowed from X" and "lent to Y".
 
 Join with a **trip code** (for example `ALPS26`) and pick your name. There are no passwords. Share the invite link (`?trip=ALPS26`) from the profile menu.
@@ -44,6 +44,16 @@ The Firebase web config isn't secret (it ships to every browser). Access is cont
 src/data/gearCatalog.js     gear sections + items (ski / snowboard aware)
 src/lib/stats.js            owned count, readiness, badges, ranking
 src/lib/store/              Firestore adapter + localStorage demo adapter (same interface)
-src/components/RiderFigure  the 2.5D parallax SVG rider
+src/components/Rider3D      the 3D rider (R3F + drei), one clickable group per gear section
+src/components/RiderStage   lazy-loads Rider3D, falls back to the SVG rider
+src/components/RiderFigure  the 2.5D parallax SVG rider (fallback + crew mini cards)
 src/components/…            GearView, GearSection, ShoppingList, CrewView, Leaderboard, RequestsInbox
 ```
+
+## Design & 3D resources
+
+Useful if you want to take the look further:
+
+- **3D tooling (MCP servers for AI coding tools):** [threejs-devtools-mcp](https://github.com/DmitriyGolub/threejs-devtools-mcp) (inspect and tweak a live scene), [basementstudio/mcp-three](https://github.com/basementstudio/mcp-three) (turn `.glb` files into R3F JSX), [blender-mcp](https://github.com/ahujasid/blender-mcp) (drive Blender to model custom gear).
+- **Free CC0 characters:** [Quaternius Ultimate Modular Men](https://quaternius.com/packs/ultimatemodularcharacters.html) and [Kenney Modular Characters](https://kenney.nl/assets/modular-characters), if you ever want a rigged, animated character instead of the hand-built one. (Ready Player Me shut down on Jan 31, 2026.)
+- **UI components:** [21st.dev Magic MCP](https://github.com/21st-dev/magic-mcp) and a [shadcn/ui MCP](https://github.com/Jpisnice/shadcn-ui-mcp-server), for a Tailwind + shadcn redesign.

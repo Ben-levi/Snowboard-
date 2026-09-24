@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { GEAR_BY_ID } from './data/gearCatalog.js';
 import { useTrip } from './hooks/useTrip.js';
 import { store } from './lib/store/index.js';
+import { celebrate } from './lib/celebrate.js';
+import { isFullyGeared } from './lib/stats.js';
 import Avatar from './components/Avatar.jsx';
 import CrewView from './components/CrewView.jsx';
 import GearView from './components/GearView.jsx';
@@ -105,6 +108,18 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
+  // Confetti when *you* go from missing gear to Fully Geared (not on first load or when switching person).
+  const geared = me ? isFullyGeared(me) : false;
+  const lastGeared = useRef({ id: null, geared: false });
+  useEffect(() => {
+    const prev = lastGeared.current;
+    if (me && prev.id === me.id && !prev.geared && geared) {
+      celebrate('big');
+      setToast('🏆 Fully Geared! See you on the slopes');
+    }
+    lastGeared.current = { id: me?.id ?? null, geared };
+  }, [me, geared]);
+
   const demo = store.mode === 'demo';
   const pendingIn = me ? requests.filter((r) => r.toId === me.id && r.status === 'pending').length : 0;
 
@@ -139,23 +154,49 @@ export default function App() {
         <nav className="tabs" aria-label="Sections">
           {TABS.map((t) => (
             <button key={t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
-              <span aria-hidden>{t.emoji}</span> <span className="tab-label">{t.label}</span>
-              {t.id === 'requests' && pendingIn > 0 && <span className="dot">{pendingIn}</span>}
+              {tab === t.id && (
+                <motion.span layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', bounce: 0.25, duration: 0.45 }} />
+              )}
+              <span className="tab-content">
+                <span aria-hidden>{t.emoji}</span> <span className="tab-label">{t.label}</span>
+              </span>
+              <AnimatePresence>
+                {t.id === 'requests' && pendingIn > 0 && (
+                  <motion.span
+                    key="dot"
+                    className="dot"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 18 }}
+                  >
+                    {pendingIn}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
           ))}
         </nav>
-        <main>
-          {tab === 'gear' && (
-            <GearView tripCode={tripCode} member={me} me={me} members={members} requests={requests} editable>
-              <ShoppingList me={me} members={members} requests={requests} onRequest={onRequest} />
-            </GearView>
-          )}
-          {tab === 'crew' && (
-            <CrewView tripCode={tripCode} members={members} me={me} requests={requests} onRequest={onRequest} />
-          )}
-          {tab === 'leaderboard' && <Leaderboard members={members} me={me} />}
-          {tab === 'requests' && <RequestsInbox tripCode={tripCode} me={me} members={members} requests={requests} />}
-        </main>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.main
+            key={tab}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22, ease: 'easeOut' }}
+          >
+            {tab === 'gear' && (
+              <GearView tripCode={tripCode} member={me} me={me} members={members} requests={requests} editable>
+                <ShoppingList me={me} members={members} requests={requests} onRequest={onRequest} />
+              </GearView>
+            )}
+            {tab === 'crew' && (
+              <CrewView tripCode={tripCode} members={members} me={me} requests={requests} onRequest={onRequest} />
+            )}
+            {tab === 'leaderboard' && <Leaderboard members={members} me={me} />}
+            {tab === 'requests' && <RequestsInbox tripCode={tripCode} me={me} members={members} requests={requests} />}
+          </motion.main>
+        </AnimatePresence>
         {draft && (
           <RequestDialog draft={draft} members={members} onSend={sendRequest} onClose={() => setDraft(null)} />
         )}
@@ -164,32 +205,34 @@ export default function App() {
   }
 
   return (
-    <div className="app">
-      <Snowfall />
-      {demo && <div className="demo-banner">Demo mode: data stays on this device. Connect Firebase to share with the crew.</div>}
-      <header className="topbar">
-        <div className="brand">
-          <span aria-hidden>🏔️</span> Snow Crew
-          {tripCode && me && <span className="trip-chip">{tripCode}</span>}
-        </div>
-        {me && (
-          <MeMenu
-            tripCode={tripCode}
-            me={me}
-            onSwitch={() => {
-              chooseMe(null);
-              setTab('gear');
-            }}
-            onLeave={() => {
-              leaveTrip();
-              setTab('gear');
-            }}
-            onToast={setToast}
-          />
-        )}
-      </header>
-      <div className="container">{body}</div>
-      {toast && <div className="toast" role="status">{toast}</div>}
-    </div>
+    <MotionConfig reducedMotion="user">
+      <div className="app">
+        <Snowfall />
+        {demo && <div className="demo-banner">Demo mode: data stays on this device. Connect Firebase to share with the crew.</div>}
+        <header className="topbar">
+          <div className="brand">
+            <span aria-hidden>🏔️</span> Snow Crew
+            {tripCode && me && <span className="trip-chip">{tripCode}</span>}
+          </div>
+          {me && (
+            <MeMenu
+              tripCode={tripCode}
+              me={me}
+              onSwitch={() => {
+                chooseMe(null);
+                setTab('gear');
+              }}
+              onLeave={() => {
+                leaveTrip();
+                setTab('gear');
+              }}
+              onToast={setToast}
+            />
+          )}
+        </header>
+        <div className="container">{body}</div>
+        {toast && <div className="toast" role="status">{toast}</div>}
+      </div>
+    </MotionConfig>
   );
 }

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { SECTIONS } from '../data/gearCatalog.js';
 import { itemOf, store } from '../lib/store/index.js';
 import { countByStatus, ownedCount, readiness } from '../lib/stats.js';
-import RiderFigure, { TINTS } from './RiderFigure.jsx';
+import { TINTS } from './RiderFigure.jsx';
+import RiderStage from './RiderStage.jsx';
+import CountUp from './CountUp.jsx';
 import GearSection from './GearSection.jsx';
 
 function Legend() {
@@ -60,12 +62,12 @@ export default function GearView({ tripCode, member, me, members, requests, edit
     <div className="gear-view">
       <div className="figure-col">
         <div className="card figure-card">
-          <RiderFigure member={member} selected={[...open].at(-1)} onSelect={selectFromFigure} />
+          <RiderStage member={member} selected={[...open].at(-1)} onSelect={selectFromFigure} />
           <div className="stat-row">
-            <div><b>{ownedCount(member)}</b><span>owned</span></div>
-            <div><b>{counts.borrow + counts.borrowed}</b><span>borrow</span></div>
-            <div><b>{counts.buy}</b><span>to buy</span></div>
-            <div><b>{Math.round(readiness(member) * 100)}%</b><span>ready</span></div>
+            <div><b><CountUp value={ownedCount(member)} /></b><span>owned</span></div>
+            <div><b><CountUp value={counts.borrow + counts.borrowed} /></b><span>borrow</span></div>
+            <div><b><CountUp value={counts.buy} /></b><span>to buy</span></div>
+            <div><b><CountUp value={Math.round(readiness(member) * 100)} suffix="%" /></b><span>ready</span></div>
           </div>
           <Legend />
         </div>

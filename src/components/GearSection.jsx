@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { gearInSection, STATUS_BY_ID } from '../data/gearCatalog.js';
 import { itemOf } from '../lib/store/index.js';
 import { sectionStatus } from '../lib/stats.js';
@@ -51,16 +52,17 @@ function ItemRow({ gear, item, editable, nameOf, onChange, borrowAction }) {
               const borrowed = s === 'borrow' && item.status === 'borrowed';
               const on = item.status === s || borrowed;
               return (
-                <button
+                <motion.button
                   key={s}
                   type="button"
+                  whileTap={{ scale: 0.9 }}
                   role="radio"
                   aria-checked={on}
                   className={`chip chip-${s}${on ? ' on' : ''}${borrowed ? ' borrowed' : ''}`}
                   onClick={() => onChange({ status: on ? null : s, borrowedFrom: null })}
                 >
                   {borrowed ? 'Borrowed ✓' : STATUS_BY_ID[s].short}
-                </button>
+                </motion.button>
               );
             })}
           </div>

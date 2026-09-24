@@ -201,7 +201,10 @@ input, select { font: inherit; color: inherit; }
   position: relative;
   white-space: nowrap;
 }
-.tabs button.on { background: #fff; color: var(--brand-ink); box-shadow: 0 2px 8px rgba(40, 80, 140, 0.12); }
+.tabs button.on { color: var(--brand-ink); }
+.tab-pill { position: absolute; inset: 0; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(40, 80, 140, 0.12); }
+.tab-content { position: relative; }
+.dot { z-index: 1; }
 .dot {
   position: absolute; top: 4px; right: 8px;
   background: var(--buy); color: #fff; font-size: 0.7rem; min-width: 18px; height: 18px; line-height: 18px;
@@ -241,6 +244,9 @@ input, select { font: inherit; color: inherit; }
   50% { transform: rotateY(8deg) rotateZ(1deg); }
 }
 .figure-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.rider-3d .canvas-wrap { width: 100%; border-radius: 14px; overflow: hidden; touch-action: pan-y; }
+.rider-3d canvas { cursor: grab; }
+.rider-3d canvas:active { cursor: grabbing; }
 .ground-shadow { fill: rgba(60, 100, 160, 0.14); }
 
 .region .part { fill: var(--fill); stroke: var(--stroke); stroke-width: 2.5; stroke-dasharray: var(--dash); stroke-linejoin: round; }
@@ -261,7 +267,7 @@ input, select { font: inherit; color: inherit; }
 .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; margin-top: 12px; text-align: center; }
 .stat-row div { display: flex; flex-direction: column; }
 .stat-row b { font-family: 'Fredoka', sans-serif; font-size: 1.4rem; }
-.stat-row span { font-size: 0.75rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-row > div > span { font-size: 0.75rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 
 .legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 12px; margin-top: 12px; font-size: 0.75rem; color: var(--muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid; vertical-align: -1px; }
@@ -380,7 +386,7 @@ input, select { font: inherit; color: inherit; }
 .legend i.own, .legend i.borrowed, .legend i.borrow, .legend i.buy, .legend i.unset { border: none; }
 .rank-score { text-align: right; }
 .rank-score b { font-family: 'Fredoka', sans-serif; font-size: 1.4rem; }
-.rank-score span { color: var(--muted); font-size: 0.85rem; }
+.rank-score > span { color: var(--muted); font-size: 0.85rem; }
 .badge-key p { margin: 4px 0; }
 
 /* ---------- Requests ---------- */

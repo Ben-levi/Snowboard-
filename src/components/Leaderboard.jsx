@@ -1,6 +1,8 @@
+import { motion } from 'motion/react';
 import { badges, countByStatus, rankMembers } from '../lib/stats.js';
 import { gearFor } from '../data/gearCatalog.js';
 import Avatar from './Avatar.jsx';
+import CountUp from './CountUp.jsx';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -16,13 +18,26 @@ export default function Leaderboard({ members, me }) {
         <h2>🏆 Most gear owned</h2>
         <div className="podium">
           {podiumOrder.map((row) => (
-            <div key={row.member.id} className={`podium-spot place-${row.rank}`}>
+            <motion.div
+              key={row.member.id}
+              layout
+              className={`podium-spot place-${row.rank}`}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring', bounce: 0.35, delay: (3 - row.rank) * 0.08 }}
+            >
               <div className="podium-medal">{MEDALS[row.rank - 1] ?? row.rank}</div>
               <Avatar member={row.member} size={row.rank === 1 ? 56 : 44} />
               <div className="podium-name">{row.member.name}</div>
-              <div className="podium-score">{row.owned} items</div>
-              <div className="podium-block" style={{ background: row.member.color }} />
-            </div>
+              <div className="podium-score"><CountUp value={row.owned} /> items</div>
+              <motion.div
+                className="podium-block"
+                style={{ background: row.member.color, originY: 1 }}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: 1 }}
+                transition={{ type: 'spring', bounce: 0.3, delay: 0.15 + (3 - row.rank) * 0.1 }}
+              />
+            </motion.div>
           ))}
         </div>
       </div>
@@ -33,7 +48,14 @@ export default function Leaderboard({ members, me }) {
             const counts = countByStatus(row.member);
             const total = gearFor(row.member.rider).length;
             return (
-              <li key={row.member.id} className={row.member.id === me.id ? 'me' : ''}>
+              <motion.li
+                key={row.member.id}
+                layout
+                className={row.member.id === me.id ? 'me' : ''}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ layout: { type: 'spring', bounce: 0.2 }, delay: Math.min(row.rank, 8) * 0.04 }}
+              >
                 <span className="rank">{row.rank}</span>
                 <Avatar member={row.member} size={32} />
                 <div className="rank-main">
@@ -52,10 +74,10 @@ export default function Leaderboard({ members, me }) {
                   </div>
                 </div>
                 <div className="rank-score">
-                  <b>{row.owned}</b>
+                  <b><CountUp value={row.owned} /></b>
                   <span>/{total}</span>
                 </div>
-              </li>
+              </motion.li>
             );
           })}
         </ol>
