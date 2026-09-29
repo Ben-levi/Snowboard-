@@ -38,6 +38,8 @@ PALETTE = {
     'pocket': '#2fbf2d',
     'boot': '#ff7a1a',
     'boot_dark': '#15171c',
+    'boot_shell': '#2a2e37',
+    'helmet': '#1d2129',
     'goggle_frame': '#1e5fd0',
     'lens': '#8fd3ff',
     'gaiter': '#262a33',
@@ -541,8 +543,8 @@ def _snowboard(g, art, ankle):
     for i, a in enumerate(ankle):
         x = a.x
         prim('cube', f'equipment-base-{i}', bind, g, loc=(x, -0.03, 0.035), scale=(0.085, 0.15, 0.012), bevel=0.01)
-        prim('cube', f'equipment-highback-{i}', bind, g, loc=(x, 0.1, 0.2), rot=(-0.3, 0, 0),
-             scale=(0.08, 0.014, 0.13), bevel=0.02)
+        prim('cube', f'equipment-highback-{i}', bind, g, loc=(x, 0.1, 0.15), rot=(-0.3, 0, 0),
+             scale=(0.068, 0.012, 0.09), bevel=0.02)
         for k, (y, z, r) in enumerate(((-0.01, 0.2, 0.095), (-0.12, 0.1, 0.085))):
             prim('torus', f'equipment-strap-{i}-{k}', strap, g, loc=(x, y, z - 0.05), rot=(math.pi / 2, 0, 0),
                  major=r - 0.005, minor=0.012, seg=20, ring=8, arc=math.pi, scale=(1, 1, 2.6))
