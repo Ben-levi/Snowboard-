@@ -286,8 +286,8 @@ def dress(arm, body, kind):
 
     def skull(f):
         c, n = face_center(f), f.normal
-        # crown above the brow line, plus the back/sides behind the ears (never the cheeks)
-        return head_face(f) and (c.z > 1.745 or (c.z > 1.64 and c.y > -0.005))
+        # crown down to the goggle line, plus temples/ears/back like a real helmet with ear pads (never the cheeks)
+        return head_face(f) and (c.z > 1.712 or (c.z > 1.625 and c.y > -0.02) or (c.z > 1.64 and abs(c.x) > 0.068))
 
     shell(body, 'head-helmet', skull, lambda co, n: 0.03,
           br.material('head-helmet', PAL['helmet'], rough=0.3, coat=0.8), 0.014, subdiv=2, drape=10, relax=14)
@@ -397,28 +397,87 @@ def _backpack(g, spine_m):
             loc=c + back * 0.058, rot=obj.rotation_euler, scale=(0.1, 0.004, 0.018), bevel=0.003)
 
 
+def curved_patch(name, mat, parent, radius, half_angle, half_h, keep, thickness, yscale=1.12, nx=140, nz=60, bow=0.012):
+    """Surface on a vertical cylinder in front of the face (-Y), trimmed by keep(u, v) with u, v in [-1, 1]."""
+    if WEB['on']:  # same outline at a web-friendly density
+        nx, nz = nx // 3, nz // 3
+    mesh = bpy.data.meshes.new(name)
+    bm = bmesh.new()
+    grid = []
+    for j in range(nz + 1):
+        v = -1 + 2 * j / nz
+        row = []
+        for i in range(nx + 1):
+            u = -1 + 2 * i / nx
+            a = u * half_angle
+            # toric lens: curved around the face and bowed back slightly at the top and bottom
+            row.append(bm.verts.new((radius * math.sin(a), -radius * math.cos(a) * yscale + bow * v * v, v * half_h)))
+        grid.append(row)
+    for j in range(nz):
+        for i in range(nx):
+            us = [-1 + 2 * (i + di) / nx for di in (0, 1)]
+            vs = [-1 + 2 * (j + dj) / nz for dj in (0, 1)]
+            if all(keep(u, v) for u in us for v in vs):
+                bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    for _ in range(12):  # smooth the stair-stepped outline into a clean curve
+        for v in [v for v in bm.verts if v.is_boundary]:
+            nb = [e.other_vert(v) for e in v.link_edges if e.is_boundary]
+            if len(nb) == 2:
+                v.co = v.co.lerp((nb[0].co + nb[1].co) / 2, 0.5)
+    bm.to_mesh(mesh)
+    bm.free()
+    obj = br.link(bpy.data.objects.new(name, mesh), parent)
+    s = obj.modifiers.new('solidify', 'SOLIDIFY')
+    s.thickness = thickness
+    s.offset = 1  # thicken towards the face
+    if not WEB['on']:
+        sub = obj.modifiers.new('subsurf', 'SUBSURF')
+        sub.levels = sub.render_levels = 1
+    br.bake(obj)
+    br.shade(obj)
+    obj.data.materials.append(mat)
+    return obj
+
+
+def goggle_shape(u, v, scale=1.0):
+    """Ski goggle outline: rounded rectangle (superellipse) with a notch for the nose."""
+    u, v = u / scale, v / scale
+    inside = abs(u) ** 2.8 + abs(v) ** 2.3 <= 1
+    nose = v < -0.3 and abs(u) < 0.2 - (v + 1) * 0.1
+    return inside and not nose
+
+
 def _goggles(g, head_m, groups):
-    """Wrap goggles fitted around the hood at eye level, following the head's pose."""
-    frame = br.material('head', PAL['goggle_frame'], rough=0.35, coat=0.6)
-    lens = br.material('head-lens', PAL['lens'], rough=0.03, metal=1.0, coat=1.0)
-    turn = group_child = br.group('head-goggles-rig', g)
+    """Real ski goggles: curved spherical-look lens, deep foam-backed frame, wide strap round the helmet."""
+    frame = br.material('head', PAL['goggle_frame'], rough=0.45)
+    foam = br.material('head-foam', '#050506', rough=1.0)
+    lens = br.material('head-lens', PAL['lens_mirror'], rough=0.06, metal=0.9, coat=1.0)
+    strap = br.material('head-strap', '#15171b', rough=0.8, sheen=0.3)
+    accent = br.material('head-strap-accent', PAL['jacket_cuff'], rough=0.6)
+    rig = br.group('head-goggles-rig', g)
     rot = head_m.to_3x3().normalized()
-    # head bone: +Y runs up the head; forward is -Z or +Z depending on rig roll -> pick the one facing -Y at rest
     fwd = rot @ Vector((0, 0, -1))
     if fwd.y > 0:
         fwd = -fwd
     up = (rot @ Vector((0, 1, 0))).normalized()
     side = up.cross(fwd).normalized()
-    basis = Matrix((side, -fwd, up)).transposed()  # local X=side, Y=back, Z=up (matches build_rider head space)
-    eye = head_m.to_translation() + up * 0.092 + fwd * 0.01
-    turn.matrix_world = Matrix.Translation(eye) @ basis.to_4x4()
-    arc = 2.3
-    br.prim('torus', 'head-goggle-frame', frame, turn, loc=(0, 0.004, 0), rot=(0, 0, -math.pi / 2 - arc / 2),
-            major=0.094, minor=0.02, seg=28, ring=10, arc=arc, scale=(1, 1.15, 1.45))
-    br.prim('torus', 'head-lens', lens, turn, loc=(0, -0.002, 0), rot=(0, 0, -math.pi / 2 - (arc - 0.35) / 2),
-            major=0.104, minor=0.016, seg=28, ring=10, arc=arc - 0.35, scale=(1, 1.15, 1.4))
-    br.prim('torus', 'head-strap', frame, turn, loc=(0, 0.02, 0.008), major=0.104, minor=0.008, seg=36, ring=6,
-            scale=(1, 1.1, 1))
+    basis = Matrix((side, -fwd, up)).transposed()  # local X=side, Y=back, Z=up
+    eye = head_m.to_translation() + up * 0.094 + fwd * 0.004
+    rig.matrix_world = Matrix.Translation(eye) @ basis.to_4x4()
+
+    ang, h = math.radians(64), 0.047
+    curved_patch('head-goggle-frame', frame, rig, 0.104, ang * 1.08, h * 1.12,
+                 lambda u, v: goggle_shape(u, v) and not goggle_shape(u, v, 0.86), 0.022)
+    curved_patch('head-goggle-foam', foam, rig, 0.096, ang * 1.02, h * 1.02, lambda u, v: goggle_shape(u, v), 0.01)
+    curved_patch('head-lens', lens, rig, 0.108, ang * 0.97, h * 0.97, lambda u, v: goggle_shape(u, v), 0.004)
+    # wide strap wrapping round the back of the helmet, with a thin accent stripe
+    back_arc = 2 * math.pi - 2 * ang * 1.02
+    rot_z = -math.pi / 2 + ang * 1.02
+    br.prim('torus', 'head-strap', strap, rig, loc=(0, 0.01, 0), rot=(0, 0, rot_z), major=0.114, minor=0.006,
+            seg=40, ring=8, arc=back_arc, scale=(1, 1.1, 3.0))
+    br.prim('torus', 'head-strap-stripe', accent, rig, loc=(0, 0.01, 0), rot=(0, 0, rot_z), major=0.1185,
+            minor=0.0032, seg=40, ring=6, arc=back_arc, scale=(1, 1.1, 1.2))
 
 
 # ---------------------------------------------------------------- main

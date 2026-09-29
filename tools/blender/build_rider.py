@@ -56,7 +56,7 @@ GRAFFITI = ['#ff7a1a', '#2fd3ff', '#ff3d9a', '#ffe23d', '#3ddc3a', '#ffffff', '#
 DARK = {
     'jacket': '#0c0d10', 'jacket_panel': '#2a2e36', 'jacket_cuff': '#ff7a1a', 'logo': '#9aa3b2',
     'glove': '#0a0b0d', 'pants': '#2b313c', 'pocket': '#232831', 'boot': '#ff7a1a', 'boot_dark': '#08090a',
-    'boot_shell': '#111215', 'helmet': '#0c0d10', 'goggle_frame': '#0c0d10', 'lens': '#7fd6ff',
+    'boot_shell': '#111215', 'helmet': '#0c0d10', 'goggle_frame': '#0c0d10', 'lens': '#7fd6ff', 'lens_mirror': '#2f7fd0',
     'gaiter': '#16181c', 'board_edge': '#08090a', 'binding': '#ff7a1a', 'strap': '#0c0d10',
     'backpack': '#1a1d23', 'backpack_accent': '#ff7a1a', 'beard': '#2a211c',
 }
@@ -93,7 +93,9 @@ def material(name, color='#ffffff', rough=0.6, metal=0.0, coat=0.0, image=None, 
     bsdf.inputs['Roughness'].default_value = rough
     bsdf.inputs['Metallic'].default_value = metal
     bsdf.inputs['Coat Weight'].default_value = coat
-    bsdf.inputs['Sheen Weight'].default_value = sheen
+    if sheen:  # glTF export keeps the sheen *colour* but drops its weight, so encode the amount in the tint
+        bsdf.inputs['Sheen Weight'].default_value = 1.0
+        bsdf.inputs['Sheen Tint'].default_value = (sheen, sheen, sheen, 1.0)
     if image is not None:
         tex = nt.nodes.new('ShaderNodeTexImage')
         tex.image = image
