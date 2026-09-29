@@ -489,6 +489,7 @@ def main():
     ap.add_argument('--only', choices=['snowboard', 'ski'])
     ap.add_argument('--views', default='0,35')
     ap.add_argument('--no-export', action='store_true')
+    ap.add_argument('--thumbs', action='store_true', help='render transparent crew-card thumbnails into public/models')
     args = ap.parse_args(argv)
     for kind in ('snowboard', 'ski'):
         if args.only and kind != args.only:
@@ -500,6 +501,21 @@ def main():
                 br.setup_render(os.path.join(args.render, f'pro-{kind}-{int(yaw)}.png'), yaw, theme='dark')
                 bpy.ops.render.render(write_still=True)
                 print('rendered', kind, yaw)
+        if args.thumbs:
+            arm, body = load_base()
+            dress(arm, body, kind)
+            out = os.path.join(OUT_DIR, f'rider-{kind}-thumb.png')
+            br.setup_render(out, 28, res=(240, 300), theme='dark')
+            scene = bpy.context.scene
+            scene.render.film_transparent = True
+            scene.render.image_settings.color_mode = 'RGBA'
+            scene.render.image_settings.compression = 100
+            scene.cycles.samples = 64
+            bpy.data.objects['studio'].hide_render = True
+            cam = scene.camera
+            cam.data.lens = 70
+            bpy.ops.render.render(write_still=True)
+            print('thumb', out, os.path.getsize(out) // 1024, 'KB')
         if not args.no_export:
             WEB['on'] = True
             arm, body = load_base()

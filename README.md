@@ -2,7 +2,7 @@
 
 A light, fun gear tracker for a group ski/snowboard trip.
 
-- **My Gear**: a real 3D rider (React Three Fiber). Drag to spin it, and tap a body part (head, upper body, hands, legs, feet, board/skis, backpack) to open that section's gear dropdown. The 3D code loads lazily. Browsers without WebGL (or `?flat=1`) get the lightweight 2.5D SVG rider instead. Mark each item **Own**, **Buy**, **Borrow** or **Skip**, add notes (brand/size), and flag what you're **happy to lend**. The figure tints by status.
+- **My Gear**: a 3D rider on a dark studio stage (React Three Fiber). Drag to spin it, and tap a body part (helmet and goggles, jacket, gloves, pants, boots, board or skis, backpack) to open that section's gear dropdown. Snowboarders and skiers get their own model. The chips under the figure show each section's status. Browsers without WebGL (or `?flat=1`) get a lightweight 2.5D SVG rider instead.
 - **My to-do**: what you still need to buy or borrow, and which friends can lend each item, with one-tap requests.
 - **Crew**: everyone's figure and progress, plus a **"Who has…?"** search.
 - **Leaderboard**: ranked by number of items owned, with an animated podium, rows that slide when ranks change, and badges (🏆 Fully Geared, 🤝 Generous, 🛒 Shopper). You get confetti when you become Fully Geared or lend something.
@@ -44,12 +44,26 @@ The Firebase web config isn't secret (it ships to every browser). Access is cont
 src/data/gearCatalog.js     gear sections + items (ski / snowboard aware)
 src/lib/stats.js            owned count, readiness, badges, ranking
 src/lib/store/              Firestore adapter + localStorage demo adapter (same interface)
-src/components/Rider3D      the 3D rider (R3F + drei), one clickable group per gear section
+src/components/RiderModel   the Blender-built rider (glTF) on a dark studio stage
+src/components/Rider3D      fallback 3D rider made from primitives
 src/components/RiderSpline  rider designed in Spline (optional, via VITE_SPLINE_SCENE)
-src/components/RiderStage   picks Spline → built-in 3D → SVG rider, with fallbacks
+src/components/RiderStage   picks Spline → rider model → built-in 3D → SVG, with fallbacks
+tools/blender/              scripts that build the rider models
 src/components/RiderFigure  the 2.5D parallax SVG rider (fallback + crew mini cards)
 src/components/…            GearView, GearSection, ShoppingList, CrewView, Leaderboard, RequestsInbox
 ```
+
+## The rider models
+
+`public/models/rider-{snowboard,ski}.glb` (plus `-thumb.png` for the Crew cards) are generated in Blender from a CC0 base character. See [tools/blender/source/CREDITS.md](tools/blender/source/CREDITS.md). To tweak colors, pose or gear and rebuild:
+
+```bash
+python3 -m venv tools/blender/.venv && tools/blender/.venv/bin/pip install "bpy==4.5.*"
+tools/blender/.venv/bin/python tools/blender/dress_rider.py --thumbs          # export models + thumbnails
+tools/blender/.venv/bin/python tools/blender/dress_rider.py --render /tmp/r   # optional preview renders
+```
+
+Colors live in the `DARK` palette in `tools/blender/build_rider.py`. Parts are named after gear sections (`head-…`, `upper-…`, `hands-…`, `lower-…`, `feet-…`, `equipment-…`, `extras-…`), which is how taps map to the dropdowns.
 
 ## Design the rider in Spline
 

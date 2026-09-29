@@ -4,14 +4,19 @@ import { itemOf } from '../lib/store/index.js';
 import { badges, countByStatus, ownedCount, readiness } from '../lib/stats.js';
 import Avatar from './Avatar.jsx';
 import GearView from './GearView.jsx';
-import RiderFigure from './RiderFigure.jsx';
 
 function MemberCard({ member, isMe, onOpen }) {
   const counts = countByStatus(member);
   const pct = Math.round(readiness(member) * 100);
   return (
     <button className="card member-card" onClick={() => onOpen(member.id)}>
-      <RiderFigure member={member} size={96} interactive={false} />
+      <div className="member-thumb" style={{ '--accent': member.color }}>
+        <img
+          src={`${import.meta.env.BASE_URL}models/rider-${member.rider === 'ski' ? 'ski' : 'snowboard'}-thumb.png`}
+          alt=""
+          loading="lazy"
+        />
+      </div>
       <div className="member-info">
         <div className="member-name">
           <Avatar member={member} size={22} /> {member.name} {isMe && <span className="you">you</span>}
