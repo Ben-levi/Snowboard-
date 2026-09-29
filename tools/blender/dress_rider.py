@@ -27,7 +27,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SOURCE = os.path.join(HERE, 'source', 'quaternius-superhero-male.glb')
 OUT_DIR = br.OUT_DIR
 
-PAL = br.PALETTE
+PAL = dict(br.PALETTE, **br.DARK)  # dark theme by default
 WEB = {'on': False}  # export mode: lighter shells (no subdivision), smooth shading does the rest
 
 JACKET_BONES = {'spine_01', 'spine_02', 'spine_03', 'clavicle_l', 'clavicle_r',
@@ -244,14 +244,14 @@ def dress(arm, body, kind):
         return sum((rest[v.index] for v in f.verts), Vector()) / len(f.verts)
 
     # ---- jacket: orange puffy shell, blue chest panel and green cuffs as clean overlaid layers
-    orange = br.material('upper', PAL['jacket'], rough=0.55, sheen=0.4)
+    orange = br.material('upper', PAL['jacket'], rough=0.7, sheen=0.05)
 
     def jacket_offset(co, n):
         return 0.032 + 0.014 * max(0, 1 - abs(co.z - 1.22) / 0.3)
 
     jacket = shell(body, 'upper-jacket', lambda f: face_region(f) == 'upper', jacket_offset, orange, 0.012, drape=12,
                    relax=14)
-    blue = br.material('upper-panel', PAL['jacket_panel'], rough=0.55, sheen=0.4)
+    blue = br.material('upper-panel', PAL['jacket_panel'], rough=0.7, sheen=0.05)
     shoulders = [arm.data.bones['upperarm_l'].head_local, arm.data.bones['upperarm_r'].head_local]
 
     def yoke(f):  # colour-blocked yoke: chest/upper back above the line plus the shoulder caps
@@ -266,7 +266,7 @@ def dress(arm, body, kind):
           lambda co, n: jacket_offset(co, n) + 0.008, green, 0.006, drape=6, relax=10)
 
     # ---- pants: baggy green, flaring towards the boots
-    pants = br.material('lower', PAL['pants'], rough=0.8, sheen=0.3)
+    pants = br.material('lower', PAL['pants'], rough=0.85, sheen=0.05)
     shell(body, 'lower-pants', lambda f: face_region(f) == 'lower',
           lambda co, n: 0.03 + 0.04 * max(0, min(1, (0.62 - co.z) / 0.45)), pants, 0.01, drape=14)
 
@@ -286,12 +286,20 @@ def dress(arm, body, kind):
 
     def skull(f):
         c, n = face_center(f), f.normal
-        return head_face(f) and (c.z > 1.735 or (c.z > 1.64 and n.y > -0.2))
+        # crown above the brow line, plus the back/sides behind the ears (never the cheeks)
+        return head_face(f) and (c.z > 1.745 or (c.z > 1.64 and c.y > -0.005))
 
     shell(body, 'head-helmet', skull, lambda co, n: 0.03,
           br.material('head-helmet', PAL['helmet'], rough=0.3, coat=0.8), 0.014, subdiv=2, drape=10, relax=14)
     shell(body, 'head-gaiter', lambda f: head_face(f) and face_center(f).z < neck_z + 0.04,
           lambda co, n: 0.02, br.material('head-gaiter', PAL['gaiter'], rough=0.85, sheen=0.3), 0.006, drape=6, relax=8)
+
+    for m in body.data.materials:  # less plastic-looking skin
+        b = m.node_tree.nodes.get('Principled BSDF') if m.use_nodes else None
+        if b:
+            b.inputs['Roughness'].default_value = 0.62
+            b.inputs['Subsurface Weight'].default_value = 0.12
+            b.inputs['Subsurface Radius'].default_value = (1.0, 0.35, 0.2)
 
     # body keeps only the visible face skin
     bm = bmesh.new()
@@ -328,7 +336,7 @@ def dress(arm, body, kind):
     # ---- gear rebuilt around the posed body: board/skis, backpack, logo
     ankles = [Vector((0.27, 0.02, 0.125)), Vector((-0.27, 0.02, 0.125))] if board else \
         [Vector((0.12, 0, 0.115)), Vector((-0.12, 0, 0.115))]
-    art = br.graffiti_image(f'{kind}-graphic')
+    art = br.graffiti_image(f'{kind}-graphic', colors=br.GRAFFITI_DARK, bg='#0b0c0e')
     if board:
         br._snowboard(groups['equipment'], art, ankles)
     else:
@@ -430,7 +438,7 @@ def main():
             for yaw in (float(y) for y in args.views.split(',')):
                 arm, body = load_base()
                 dress(arm, body, kind)
-                br.setup_render(os.path.join(args.render, f'pro-{kind}-{int(yaw)}.png'), yaw)
+                br.setup_render(os.path.join(args.render, f'pro-{kind}-{int(yaw)}.png'), yaw, theme='dark')
                 bpy.ops.render.render(write_still=True)
                 print('rendered', kind, yaw)
         if not args.no_export:

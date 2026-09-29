@@ -52,6 +52,16 @@ PALETTE = {
 }
 GRAFFITI = ['#ff7a1a', '#2fd3ff', '#ff3d9a', '#ffe23d', '#3ddc3a', '#ffffff', '#6a5cff']
 
+# Dark theme: true-black jacket, charcoal yoke, slate pants; one orange accent (cuffs, bindings, board hits).
+DARK = {
+    'jacket': '#0c0d10', 'jacket_panel': '#2a2e36', 'jacket_cuff': '#ff7a1a', 'logo': '#9aa3b2',
+    'glove': '#0a0b0d', 'pants': '#2b313c', 'pocket': '#232831', 'boot': '#ff7a1a', 'boot_dark': '#08090a',
+    'boot_shell': '#111215', 'helmet': '#0c0d10', 'goggle_frame': '#0c0d10', 'lens': '#7fd6ff',
+    'gaiter': '#16181c', 'board_edge': '#08090a', 'binding': '#ff7a1a', 'strap': '#0c0d10',
+    'backpack': '#1a1d23', 'backpack_accent': '#ff7a1a', 'beard': '#2a211c',
+}
+GRAFFITI_DARK = ['#1a1d23', '#2a2e36', '#3a404b', '#ff7a1a', '#7fd6ff', '#08090a', '#4a5160']
+
 
 # ---------------------------------------------------------------- helpers
 
@@ -251,12 +261,12 @@ def rotate_about(p, pivot, angle_z):
 
 # ---------------------------------------------------------------- graffiti texture
 
-def graffiti_image(name, w=1024, h=256, seed=7):
+def graffiti_image(name, w=1024, h=256, seed=7, colors=None, bg='#141a2e'):
     """Loud multicolour board graphic: stripes, outlined blobs, tags and splatter."""
     rng = np.random.default_rng(seed)
-    pal = np.array([hex_rgb(c) for c in GRAFFITI])
+    pal = np.array([hex_rgb(c) for c in (colors or GRAFFITI)])
     img = np.zeros((h, w, 3))
-    img[:] = hex_rgb('#141a2e')
+    img[:] = hex_rgb(bg)
     yy, xx = np.mgrid[0:h, 0:w].astype(float)
 
     stripes = ((xx * 0.8 + yy) // 26) % 3 == 0
@@ -577,7 +587,7 @@ def _skis(g, art, ankle, el, wr):
 
 # ---------------------------------------------------------------- preview render (studio look)
 
-def setup_render(out_png, yaw_deg, res=(800, 1000)):
+def setup_render(out_png, yaw_deg, res=(800, 1000), theme='bright'):
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
     scene.cycles.device = 'CPU'
@@ -590,8 +600,9 @@ def setup_render(out_png, yaw_deg, res=(800, 1000)):
 
     world = bpy.data.worlds.new('studio')
     world.use_nodes = True
-    world.node_tree.nodes['Background'].inputs['Color'].default_value = hex_rgba('#2a2c36')
-    world.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.35
+    dark = theme == 'dark'
+    world.node_tree.nodes['Background'].inputs['Color'].default_value = hex_rgba('#050506' if dark else '#2a2c36')
+    world.node_tree.nodes['Background'].inputs['Strength'].default_value = 0.2 if dark else 0.35
     scene.world = world
 
     # curved studio floor/backdrop (cyclorama): flat floor, quarter-circle cove, back wall
@@ -606,7 +617,10 @@ def setup_render(out_png, yaw_deg, res=(800, 1000)):
     bm.to_mesh(mesh)
     bm.free()
     floor = link(bpy.data.objects.new('studio', mesh))
-    floor.data.materials.append(material('studio-floor', '#3a3d4a', rough=0.55))
+    floor.data.materials.append(material('studio-floor', '#020203' if dark else '#3a3d4a', rough=0.5 if dark else 0.55))
+    if dark:  # pure black, non-reflective backdrop
+        floor.data.materials[0].node_tree.nodes['Principled BSDF'].inputs['Specular IOR Level'].default_value = 0.0
+        floor.data.materials[0].node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = (0, 0, 0, 1)
     shade(floor)
     floor.rotation_euler = (0, 0, -math.radians(yaw_deg))  # backdrop always behind the rider
 
@@ -617,11 +631,18 @@ def setup_render(out_png, yaw_deg, res=(800, 1000)):
         obj.location = loc
         obj.rotation_euler = (Vector((0, 0, 0.9)) - Vector(loc)).to_track_quat('-Z', 'Y').to_euler()
 
-    light('key', (-2.4, -3.0, 3.0), 520, 2.2, '#fff1e2')
-    light('fill', (2.8, -2.2, 1.4), 90, 3.0, '#cfe0ff')
-    light('rim-pink', (-2.0, 2.2, 1.6), 520, 1.6, '#ff4fa3')
-    light('rim-blue', (2.3, 2.0, 2.2), 480, 1.6, '#4fb3ff')
-    light('top', (0, 0.5, 4.0), 150, 2.0, '#ffffff')
+    if dark:  # moody: soft warm key, gentle face fill, cool rims that outline the black outfit
+        light('key', (-2.2, -3.0, 2.8), 260, 2.6, '#fff0e0')
+        light('face', (0.4, -3.2, 1.8), 110, 1.2, '#ffe8d8')
+        light('fill', (2.8, -2.2, 1.4), 60, 3.0, '#cfe0ff')
+        light('rim-l', (-2.0, 2.2, 1.8), 700, 1.4, '#9fd8ff')
+        light('rim-r', (2.3, 2.0, 2.2), 650, 1.4, '#ffffff')
+    else:
+        light('key', (-2.4, -3.0, 3.0), 520, 2.2, '#fff1e2')
+        light('fill', (2.8, -2.2, 1.4), 90, 3.0, '#cfe0ff')
+        light('rim-pink', (-2.0, 2.2, 1.6), 520, 1.6, '#ff4fa3')
+        light('rim-blue', (2.3, 2.0, 2.2), 480, 1.6, '#4fb3ff')
+        light('top', (0, 0.5, 4.0), 150, 2.0, '#ffffff')
 
     cam_data = bpy.data.cameras.new('cam')
     cam_data.lens = 62
