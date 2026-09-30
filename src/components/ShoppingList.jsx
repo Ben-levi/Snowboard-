@@ -1,3 +1,4 @@
+import { t } from '../i18n/he.js';
 import { gearFor } from '../data/gearCatalog.js';
 import { itemOf } from '../lib/store/index.js';
 import { lendersFor } from '../lib/stats.js';
@@ -13,12 +14,12 @@ export default function ShoppingList({ me, members, requests, onRequest }) {
 
   return (
     <div className="card shopping">
-      <h2>📝 My to-do</h2>
-      {!toBuy.length && !toBorrow.length && !unset.length && <p className="muted">Nothing left to sort. You're ready to shred! 🎉</p>}
+      <h2>{t.todo.title}</h2>
+      {!toBuy.length && !toBorrow.length && !unset.length && <p className="muted">{t.todo.allDone}</p>}
 
       {toBorrow.length > 0 && (
         <>
-          <h3>🤝 To borrow</h3>
+          <h3>{t.todo.toBorrow}</h3>
           <ul className="todo-list">
             {toBorrow.map((g) => {
               const lenders = lendersFor(members, g.id, me.id);
@@ -36,12 +37,12 @@ export default function ShoppingList({ me, members, requests, onRequest }) {
                           title={itemOf(l, g.id).note || undefined}
                         >
                           <Avatar member={l} size={22} />
-                          {pendingTo(g.id, l.id) ? `Asked ${l.name}` : `Ask ${l.name}`}
+                          {pendingTo(g.id, l.id) ? t.todo.asked(l.name) : t.todo.ask(l.name)}
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <div className="muted small">Nobody's offering one yet</div>
+                    <div className="muted small">{t.todo.nobody}</div>
                   )}
                 </li>
               );
@@ -52,13 +53,13 @@ export default function ShoppingList({ me, members, requests, onRequest }) {
 
       {toBuy.length > 0 && (
         <>
-          <h3>🛒 To buy</h3>
+          <h3>{t.todo.toBuy}</h3>
           <ul className="todo-list">
             {toBuy.map((g) => (
               <li key={g.id}>
                 <div className="todo-item">{g.emoji} {g.label}</div>
                 {lendersFor(members, g.id, me.id).length > 0 && (
-                  <div className="muted small">💡 Someone can lend this. Switch it to Borrow and save money.</div>
+                  <div className="muted small">{t.todo.tip}</div>
                 )}
               </li>
             ))}
@@ -68,7 +69,7 @@ export default function ShoppingList({ me, members, requests, onRequest }) {
 
       {unset.length > 0 && (
         <>
-          <h3>❓ Still to decide</h3>
+          <h3>{t.todo.undecided}</h3>
           <p className="muted small">{unset.map((g) => `${g.emoji} ${g.label}`).join(' · ')}</p>
         </>
       )}

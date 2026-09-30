@@ -1,49 +1,49 @@
 // Gear sections map 1:1 to clickable regions on the rider figure.
 export const SECTIONS = [
-  { id: 'head', label: 'Head', emoji: '⛑️' },
-  { id: 'upper', label: 'Upper body', emoji: '🧥' },
-  { id: 'hands', label: 'Hands', emoji: '🧤' },
-  { id: 'lower', label: 'Lower body', emoji: '👖' },
-  { id: 'feet', label: 'Feet', emoji: '🥾' },
-  { id: 'equipment', label: 'Equipment', emoji: '🏂' },
-  { id: 'extras', label: 'Extras', emoji: '🎒' },
+  { id: 'head', label: 'ראש', emoji: '⛑️' },
+  { id: 'upper', label: 'פלג גוף עליון', emoji: '🧥' },
+  { id: 'hands', label: 'ידיים', emoji: '🧤' },
+  { id: 'lower', label: 'פלג גוף תחתון', emoji: '👖' },
+  { id: 'feet', label: 'רגליים', emoji: '🥾' },
+  { id: 'equipment', label: 'ציוד גלישה', emoji: '🏂' },
+  { id: 'extras', label: 'תוספות', emoji: '🎒' },
 ];
 
 const BOTH = ['snowboard', 'ski'];
 
 export const GEAR = [
-  { id: 'helmet', label: 'Helmet', emoji: '⛑️', section: 'head', riders: BOTH, essential: true },
-  { id: 'goggles', label: 'Goggles', emoji: '🥽', section: 'head', riders: BOTH, essential: true },
-  { id: 'beanie', label: 'Beanie', emoji: '🧢', section: 'head', riders: BOTH, essential: false },
-  { id: 'gaiter', label: 'Neck gaiter / buff', emoji: '🧣', section: 'head', riders: BOTH, essential: true },
+  { id: 'helmet', label: 'קסדה', emoji: '⛑️', section: 'head', riders: BOTH, essential: true },
+  { id: 'goggles', label: 'משקפי סקי', emoji: '🥽', section: 'head', riders: BOTH, essential: true },
+  { id: 'beanie', label: 'כובע גרב', emoji: '🧢', section: 'head', riders: BOTH, essential: false },
+  { id: 'gaiter', label: 'צוואר / באף', emoji: '🧣', section: 'head', riders: BOTH, essential: true },
 
-  { id: 'base-top', label: 'Base layer top', emoji: '👕', section: 'upper', riders: BOTH, essential: true },
-  { id: 'fleece', label: 'Mid layer / fleece', emoji: '🧶', section: 'upper', riders: BOTH, essential: true },
-  { id: 'jacket', label: 'Snow jacket', emoji: '🧥', section: 'upper', riders: BOTH, essential: true },
+  { id: 'base-top', label: 'שכבה תרמית עליונה', emoji: '👕', section: 'upper', riders: BOTH, essential: true },
+  { id: 'fleece', label: 'שכבת ביניים / פליז', emoji: '🧶', section: 'upper', riders: BOTH, essential: true },
+  { id: 'jacket', label: 'מעיל סקי', emoji: '🧥', section: 'upper', riders: BOTH, essential: true },
 
-  { id: 'gloves', label: 'Gloves / mittens', emoji: '🧤', section: 'hands', riders: BOTH, essential: true },
-  { id: 'liners', label: 'Liner gloves', emoji: '✋', section: 'hands', riders: BOTH, essential: false },
-  { id: 'wrist-guards', label: 'Wrist guards', emoji: '🛡️', section: 'hands', riders: ['snowboard'], essential: false },
+  { id: 'gloves', label: 'כפפות', emoji: '🧤', section: 'hands', riders: BOTH, essential: true },
+  { id: 'liners', label: 'כפפות פנימיות', emoji: '✋', section: 'hands', riders: BOTH, essential: false },
+  { id: 'wrist-guards', label: 'מגני שורש כף יד', emoji: '🛡️', section: 'hands', riders: ['snowboard'], essential: false },
 
-  { id: 'base-bottom', label: 'Base layer bottom', emoji: '🩲', section: 'lower', riders: BOTH, essential: true },
-  { id: 'pants', label: 'Snow pants', emoji: '👖', section: 'lower', riders: BOTH, essential: true },
-  { id: 'impact-shorts', label: 'Impact shorts', emoji: '🩳', section: 'lower', riders: ['snowboard'], essential: false },
+  { id: 'base-bottom', label: 'שכבה תרמית תחתונה', emoji: '🩲', section: 'lower', riders: BOTH, essential: true },
+  { id: 'pants', label: 'מכנסי סקי', emoji: '👖', section: 'lower', riders: BOTH, essential: true },
+  { id: 'impact-shorts', label: 'מכנסי הגנה', emoji: '🩳', section: 'lower', riders: ['snowboard'], essential: false },
 
-  { id: 'socks', label: 'Ski socks', emoji: '🧦', section: 'feet', riders: BOTH, essential: true },
-  { id: 'board-boots', label: 'Snowboard boots', emoji: '🥾', section: 'feet', riders: ['snowboard'], essential: true },
-  { id: 'ski-boots', label: 'Ski boots', emoji: '🥾', section: 'feet', riders: ['ski'], essential: true },
+  { id: 'socks', label: 'גרבי סקי', emoji: '🧦', section: 'feet', riders: BOTH, essential: true },
+  { id: 'board-boots', label: 'נעלי סנובורד', emoji: '🥾', section: 'feet', riders: ['snowboard'], essential: true },
+  { id: 'ski-boots', label: 'נעלי סקי', emoji: '🥾', section: 'feet', riders: ['ski'], essential: true },
 
-  { id: 'snowboard', label: 'Snowboard', emoji: '🏂', section: 'equipment', riders: ['snowboard'], essential: true },
-  { id: 'bindings', label: 'Bindings', emoji: '🔩', section: 'equipment', riders: ['snowboard'], essential: true },
-  { id: 'skis', label: 'Skis', emoji: '🎿', section: 'equipment', riders: ['ski'], essential: true },
-  { id: 'poles', label: 'Poles', emoji: '🥢', section: 'equipment', riders: ['ski'], essential: true },
-  { id: 'wax-kit', label: 'Wax / tool kit', emoji: '🧰', section: 'equipment', riders: BOTH, essential: false },
+  { id: 'snowboard', label: 'סנובורד', emoji: '🏂', section: 'equipment', riders: ['snowboard'], essential: true },
+  { id: 'bindings', label: 'בינדינגס', emoji: '🔩', section: 'equipment', riders: ['snowboard'], essential: true },
+  { id: 'skis', label: 'מגלשיים', emoji: '🎿', section: 'equipment', riders: ['ski'], essential: true },
+  { id: 'poles', label: 'מקלות', emoji: '🥢', section: 'equipment', riders: ['ski'], essential: true },
+  { id: 'wax-kit', label: 'ערכת ווקס וכלים', emoji: '🧰', section: 'equipment', riders: BOTH, essential: false },
 
-  { id: 'backpack', label: 'Backpack', emoji: '🎒', section: 'extras', riders: BOTH, essential: false },
-  { id: 'sunscreen', label: 'Sunscreen', emoji: '🧴', section: 'extras', riders: BOTH, essential: true },
-  { id: 'lip-balm', label: 'Lip balm', emoji: '💄', section: 'extras', riders: BOTH, essential: false },
-  { id: 'bottle', label: 'Water bottle', emoji: '🥤', section: 'extras', riders: BOTH, essential: false },
-  { id: 'warmers', label: 'Hand / foot warmers', emoji: '🔥', section: 'extras', riders: BOTH, essential: false },
+  { id: 'backpack', label: 'תיק גב', emoji: '🎒', section: 'extras', riders: BOTH, essential: false },
+  { id: 'sunscreen', label: 'קרם הגנה', emoji: '🧴', section: 'extras', riders: BOTH, essential: true },
+  { id: 'lip-balm', label: 'שפתון לחות', emoji: '💄', section: 'extras', riders: BOTH, essential: false },
+  { id: 'bottle', label: 'בקבוק מים', emoji: '🥤', section: 'extras', riders: BOTH, essential: false },
+  { id: 'warmers', label: 'מחממי ידיים ורגליים', emoji: '🔥', section: 'extras', riders: BOTH, essential: false },
 ];
 
 export const GEAR_BY_ID = Object.fromEntries(GEAR.map((g) => [g.id, g]));
@@ -57,11 +57,11 @@ export function gearInSection(rider, sectionId) {
 }
 
 export const STATUSES = [
-  { id: 'own', label: 'Own it', short: 'Own', color: 'var(--own)' },
-  { id: 'buy', label: 'Need to buy', short: 'Buy', color: 'var(--buy)' },
-  { id: 'borrow', label: 'Need to borrow', short: 'Borrow', color: 'var(--borrow)' },
-  { id: 'borrowed', label: 'Borrowed', short: 'Borrowed', color: 'var(--borrowed)' },
-  { id: 'skip', label: "Don't need", short: 'Skip', color: 'var(--skip)' },
+  { id: 'own', label: 'יש לי', short: 'יש', color: 'var(--own)' },
+  { id: 'buy', label: 'צריך לקנות', short: 'לקנות', color: 'var(--buy)' },
+  { id: 'borrow', label: 'צריך לשאול', short: 'לשאול', color: 'var(--borrow)' },
+  { id: 'borrowed', label: 'שאלתי', short: 'שאלתי', color: 'var(--borrowed)' },
+  { id: 'skip', label: 'לא צריך', short: 'לא צריך', color: 'var(--skip)' },
 ];
 
 export const STATUS_BY_ID = Object.fromEntries(STATUSES.map((s) => [s.id, s]));

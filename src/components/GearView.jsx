@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from '../i18n/he.js';
 import { SECTIONS } from '../data/gearCatalog.js';
 import { itemOf, store } from '../lib/store/index.js';
 import { countByStatus, ownedCount, readiness, sectionStatus } from '../lib/stats.js';
@@ -22,7 +23,7 @@ function Legend() {
 // One chip per section with its status colour; works with any figure, including Spline scenes.
 function StatusRail({ member, selected, onSelect }) {
   return (
-    <div className="status-rail" role="toolbar" aria-label="Gear sections">
+    <div className="status-rail" role="toolbar" aria-label={t.gear.sections}>
       {SECTIONS.map((s) => {
         const tint = TINTS[sectionStatus(member, s.id)];
         return (
@@ -46,7 +47,7 @@ function StatusRail({ member, selected, onSelect }) {
 // Figure + dropdown sections for one member. Editable for yourself, read-only with borrow buttons for friends.
 export default function GearView({ tripCode, member, me, members, requests, editable, onRequest, children }) {
   const [open, setOpen] = useState(() => new Set(['head']));
-  const nameOf = (id) => members.find((m) => m.id === id)?.name ?? 'someone';
+  const nameOf = (id) => members.find((m) => m.id === id)?.name ?? t.someone;
   const counts = countByStatus(member);
 
   function toggle(id) {
@@ -77,7 +78,7 @@ export default function GearView({ tripCode, member, me, members, requests, edit
     );
     return (
       <button className="btn btn-small" disabled={pending} onClick={() => onRequest(gear.id, member.id)}>
-        {pending ? 'Asked ✓' : 'Ask to borrow'}
+        {pending ? t.gear.asked : t.gear.askToBorrow}
       </button>
     );
   }
@@ -89,10 +90,10 @@ export default function GearView({ tripCode, member, me, members, requests, edit
           <RiderStage member={member} selected={[...open].at(-1)} onSelect={selectFromFigure} />
           <StatusRail member={member} selected={[...open].at(-1)} onSelect={selectFromFigure} />
           <div className="stat-row">
-            <div><b><CountUp value={ownedCount(member)} /></b><span>owned</span></div>
-            <div><b><CountUp value={counts.borrow + counts.borrowed} /></b><span>borrow</span></div>
-            <div><b><CountUp value={counts.buy} /></b><span>to buy</span></div>
-            <div><b><CountUp value={Math.round(readiness(member) * 100)} suffix="%" /></b><span>ready</span></div>
+            <div><b><CountUp value={ownedCount(member)} /></b><span>{t.gear.owned}</span></div>
+            <div><b><CountUp value={counts.borrow + counts.borrowed} /></b><span>{t.gear.borrow}</span></div>
+            <div><b><CountUp value={counts.buy} /></b><span>{t.gear.toBuy}</span></div>
+            <div><b><CountUp value={Math.round(readiness(member) * 100)} suffix="%" /></b><span>{t.gear.ready}</span></div>
           </div>
           <Legend />
         </div>

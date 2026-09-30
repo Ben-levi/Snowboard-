@@ -1,6 +1,8 @@
 import {
   addDoc,
   collection,
+  deleteDoc,
+  deleteField,
   doc,
   FieldPath,
   getDoc,
@@ -15,23 +17,21 @@ export function createFirestoreAdapter() {
   const { db, ready } = initFirebase();
 
   const tripRef = (code) => doc(db, 'trips', code);
-  const membersCol = (code) => collection(db, 'trips', code, 'members');
-  const requestsCol = (code) => collection(db, 'trips', code, 'requests');
-  const memberRef = (code, id) => doc(db, 'trips', code, 'members', id);
-  const requestRef = (code, id) => doc(db, 'trips', code, 'requests', id);
+  const col = (code, name) => collection(db, 'trips', code, name);
+  const ref = (code, name, id) => doc(db, 'trips', code, name, id);
+  const memberRef = (code, id) => ref(code, 'members', id);
+  const requestRef = (code, id) => ref(code, 'requests', id);
   const itemPath = (itemId) => new FieldPath('items', itemId);
+  // Merge a patch into a nested map field ("info.instructor": ...) without clobbering other keys.
+  const nested = (field, patch) => Object.fromEntries(Object.entries(patch).map(([k, v]) => [`${field}.${k}`, v]));
 
-  function listen(colRef, cb, onError) {
+  function subscribe(target, onData, onError) {
     let unsub = () => {};
     let cancelled = false;
     ready
       .then(() => {
         if (cancelled) return;
-        unsub = onSnapshot(
-          colRef,
-          (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-          onError,
-        );
+        unsub = onSnapshot(target, onData, onError);
       })
       .catch(onError);
     return () => {
@@ -40,28 +40,50 @@ export function createFirestoreAdapter() {
     };
   }
 
+  const listen = (colRef, cb, onError) =>
+    subscribe(colRef, (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data() }))), onError);
+
+  async function add(colRef, data) {
+    await ready;
+    const now = Date.now();
+    const created = await addDoc(colRef, { ...data, createdAt: now, updatedAt: now });
+    return created.id;
+  }
+
+  async function patch(docRef, data) {
+    await ready;
+    await updateDoc(docRef, { ...data, updatedAt: Date.now() });
+  }
+
   return {
     mode: 'firebase',
 
-    async ensureTrip(code) {
+    // ---- Trip ----
+    async getTrip(code) {
       await ready;
       const snap = await getDoc(tripRef(code));
-      if (!snap.exists()) await setDoc(tripRef(code), { name: code, createdAt: Date.now() });
+      return snap.exists() ? snap.data() : null;
     },
 
-    listenMembers: (code, cb, onError) => listen(membersCol(code), cb, onError),
-    listenRequests: (code, cb, onError) => listen(requestsCol(code), cb, onError),
-
-    async addMember(code, { name, rider, color }) {
+    async createTrip(code, { name, adminHash }) {
       await ready;
       const now = Date.now();
-      const ref = await addDoc(membersCol(code), { name, rider, color, items: {}, createdAt: now, updatedAt: now });
-      return ref.id;
+      await setDoc(tripRef(code), { name, adminHash, info: {}, createdAt: now, updatedAt: now });
     },
 
-    async updateMember(code, id, patch) {
+    listenTrip: (code, cb, onError) => subscribe(tripRef(code), (snap) => cb(snap.exists() ? snap.data() : null), onError),
+    updateTrip: (code, data) => patch(tripRef(code), data),
+    updateTripInfo: (code, info) => patch(tripRef(code), nested('info', info)),
+
+    // ---- Members ----
+    listenMembers: (code, cb, onError) => listen(col(code, 'members'), cb, onError),
+    addMember: (code, { name, rider, color }) => add(col(code, 'members'), { name, rider, color, items: {}, info: {}, groupId: null }),
+    updateMember: (code, id, data) => patch(memberRef(code, id), data),
+    setMemberInfo: (code, id, info) => patch(memberRef(code, id), nested('info', info)),
+
+    async deleteMember(code, id) {
       await ready;
-      await updateDoc(memberRef(code, id), { ...patch, updatedAt: Date.now() });
+      await deleteDoc(memberRef(code, id));
     },
 
     async setItem(code, memberId, itemId, item) {
@@ -69,12 +91,41 @@ export function createFirestoreAdapter() {
       await updateDoc(memberRef(code, memberId), itemPath(itemId), item, 'updatedAt', Date.now());
     },
 
-    async createRequest(code, { itemId, fromId, toId, message }) {
+    // ---- Groups ----
+    listenGroups: (code, cb, onError) => listen(col(code, 'groups'), cb, onError),
+    addGroup: (code, { name, emoji }) => add(col(code, 'groups'), { name, emoji, items: {} }),
+    updateGroup: (code, id, data) => patch(ref(code, 'groups', id), data),
+
+    // Deletes the group and takes its members out of it.
+    async deleteGroup(code, id, memberIds = []) {
       await ready;
-      const now = Date.now();
-      await addDoc(requestsCol(code), {
-        itemId, fromId, toId, message: message ?? '', status: 'pending', createdAt: now, updatedAt: now,
-      });
+      const batch = writeBatch(db);
+      batch.delete(ref(code, 'groups', id));
+      for (const m of memberIds) batch.update(memberRef(code, m), { groupId: null, updatedAt: Date.now() });
+      await batch.commit();
+    },
+
+    // item = null removes it from the list.
+    async setGroupItem(code, groupId, itemId, item) {
+      await ready;
+      await updateDoc(ref(code, 'groups', groupId), itemPath(itemId), item ?? deleteField(), 'updatedAt', Date.now());
+    },
+
+    // ---- Messages ----
+    listenMessages: (code, cb, onError) => listen(col(code, 'messages'), cb, onError),
+    addMessage: (code, { text, pinned }) => add(col(code, 'messages'), { text, pinned: Boolean(pinned) }),
+    updateMessage: (code, id, data) => patch(ref(code, 'messages', id), data),
+
+    async deleteMessage(code, id) {
+      await ready;
+      await deleteDoc(ref(code, 'messages', id));
+    },
+
+    // ---- Borrow requests ----
+    listenRequests: (code, cb, onError) => listen(col(code, 'requests'), cb, onError),
+
+    async createRequest(code, { itemId, fromId, toId, message }) {
+      await add(col(code, 'requests'), { itemId, fromId, toId, message: message ?? '', status: 'pending' });
     },
 
     // Applies a request state change plus the matching item updates on both members atomically.

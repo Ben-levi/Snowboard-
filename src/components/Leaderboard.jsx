@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { badges, countByStatus, rankMembers } from '../lib/stats.js';
 import { gearFor } from '../data/gearCatalog.js';
+import { t } from '../i18n/he.js';
 import Avatar from './Avatar.jsx';
 import CountUp from './CountUp.jsx';
 
@@ -15,7 +16,7 @@ export default function Leaderboard({ members, me }) {
   return (
     <div className="leaderboard">
       <div className="card podium-card">
-        <h2>🏆 Most gear owned</h2>
+        <h2>{t.board.title}</h2>
         <div className="podium">
           {podiumOrder.map((row) => (
             <motion.div
@@ -29,7 +30,7 @@ export default function Leaderboard({ members, me }) {
               <div className="podium-medal">{MEDALS[row.rank - 1] ?? row.rank}</div>
               <Avatar member={row.member} size={row.rank === 1 ? 56 : 44} />
               <div className="podium-name">{row.member.name}</div>
-              <div className="podium-score"><CountUp value={row.owned} /> items</div>
+              <div className="podium-score"><CountUp value={row.owned} /> {t.board.itemsUnit}</div>
               <motion.div
                 className="podium-block"
                 style={{ background: row.member.color, originY: 1 }}
@@ -52,7 +53,7 @@ export default function Leaderboard({ members, me }) {
                 key={row.member.id}
                 layout
                 className={row.member.id === me.id ? 'me' : ''}
-                initial={{ opacity: 0, x: -12 }}
+                initial={{ opacity: 0, x: 12 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ layout: { type: 'spring', bounce: 0.2 }, delay: Math.min(row.rank, 8) * 0.04 }}
               >
@@ -82,19 +83,19 @@ export default function Leaderboard({ members, me }) {
           })}
         </ol>
         <div className="legend small">
-          <span><i className="own" /> own</span>
-          <span><i className="borrowed" /> borrowed/skip</span>
-          <span><i className="borrow" /> borrow</span>
-          <span><i className="buy" /> buy</span>
-          <span><i className="unset" /> not set</span>
+          <span><i className="own" /> {t.board.legendOwn}</span>
+          <span><i className="borrowed" /> {t.board.legendBorrowed}</span>
+          <span><i className="borrow" /> {t.board.legendBorrow}</span>
+          <span><i className="buy" /> {t.board.legendBuy}</span>
+          <span><i className="unset" /> {t.board.legendUnset}</span>
         </div>
       </div>
 
       <div className="card badge-key">
-        <h3>Badges</h3>
-        <p className="small">🏆 <b>Fully Geared</b>: nothing left to buy or borrow</p>
-        <p className="small">🤝 <b>Generous</b>: lent out 2 or more items</p>
-        <p className="small">🛒 <b>Shopper</b>: 5 or more items still to buy</p>
+        <h3>{t.board.badgesTitle}</h3>
+        {t.board.badges.map((b) => (
+          <p key={b.name} className="small">{b.emoji} <b>{b.name}</b>: {b.desc}</p>
+        ))}
       </div>
     </div>
   );

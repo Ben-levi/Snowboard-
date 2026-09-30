@@ -1,17 +1,11 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { t } from '../i18n/he.js';
 import { GEAR_BY_ID } from '../data/gearCatalog.js';
 import { acceptRequest, cancelRequest, declineRequest, takeBackRequest } from '../lib/store/index.js';
 import Avatar from './Avatar.jsx';
 import { celebrate } from '../lib/celebrate.js';
 
-const STATUS_TEXT = {
-  pending: '⏳ Waiting',
-  accepted: '✅ Accepted',
-  declined: '❌ Declined',
-  cancelled: '🚫 Cancelled',
-  returned: '↩️ Taken back',
-};
 
 function RequestCard({ request, other, incoming, children }) {
   const gear = GEAR_BY_ID[request.itemId];
@@ -28,13 +22,13 @@ function RequestCard({ request, other, incoming, children }) {
       <div className="req-main">
         <div>
           {incoming ? (
-            <><b>{other?.name ?? 'Someone'}</b> wants to borrow your <b>{gear?.emoji} {gear?.label}</b></>
+            <><b>{other?.name ?? t.someone}</b> {t.requests.wantsToBorrow} <b>{gear?.emoji} {gear?.label}</b> {t.requests.yourItem}</>
           ) : (
-            <>You asked <b>{other?.name ?? 'someone'}</b> for <b>{gear?.emoji} {gear?.label}</b></>
+            <>{t.requests.youAsked}<b>{other?.name ?? t.someone}</b> {t.requests.for} <b>{gear?.emoji} {gear?.label}</b></>
           )}
         </div>
         {request.message && <div className="req-msg">“{request.message}”</div>}
-        <div className="muted small">{STATUS_TEXT[request.status]} · {new Date(request.createdAt).toLocaleDateString()}</div>
+        <div className="muted small">{t.requests.status[request.status]} · {new Date(request.createdAt).toLocaleDateString('he-IL')}</div>
       </div>
       <div className="req-actions">{children}</div>
     </motion.li>
@@ -59,8 +53,8 @@ export default function RequestsInbox({ tripCode, me, members, requests }) {
   return (
     <div className="requests">
       <div className="card">
-        <h2>📥 Asked of you</h2>
-        {!incoming.length && <p className="muted">No requests yet. Mark items as “happy to lend” so friends can ask.</p>}
+        <h2>{t.requests.incomingTitle}</h2>
+        {!incoming.length && <p className="muted">{t.requests.incomingEmpty}</p>}
         <ul className="request-list">
           <AnimatePresence initial={false}>
             {incoming.map((r) => (
@@ -68,16 +62,16 @@ export default function RequestsInbox({ tripCode, me, members, requests }) {
                 {r.status === 'pending' && (
                   <>
                     <button className="btn btn-small btn-primary" disabled={busy === r.id} onClick={() => run(r.id, () => acceptRequest(tripCode, r, members).then(() => celebrate()))}>
-                      Lend it
+                      {t.requests.lend}
                     </button>
                     <button className="btn btn-small" disabled={busy === r.id} onClick={() => run(r.id, () => declineRequest(tripCode, r))}>
-                      Decline
+                      {t.requests.decline}
                     </button>
                   </>
                 )}
                 {r.status === 'accepted' && (
                   <button className="btn btn-small" disabled={busy === r.id} onClick={() => run(r.id, () => takeBackRequest(tripCode, r, members))}>
-                    Take back
+                    {t.requests.takeBack}
                   </button>
                 )}
               </RequestCard>
@@ -87,15 +81,15 @@ export default function RequestsInbox({ tripCode, me, members, requests }) {
       </div>
 
       <div className="card">
-        <h2>📤 You asked</h2>
-        {!outgoing.length && <p className="muted">You haven't asked anyone yet. Check “My to-do” for who can lend.</p>}
+        <h2>{t.requests.outgoingTitle}</h2>
+        {!outgoing.length && <p className="muted">{t.requests.outgoingEmpty}</p>}
         <ul className="request-list">
           <AnimatePresence initial={false}>
             {outgoing.map((r) => (
               <RequestCard key={r.id} request={r} other={byId(r.toId)}>
                 {r.status === 'pending' && (
                   <button className="btn btn-small" disabled={busy === r.id} onClick={() => run(r.id, () => cancelRequest(tripCode, r))}>
-                    Cancel
+                    {t.requests.cancel}
                   </button>
                 )}
               </RequestCard>

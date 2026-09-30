@@ -1,14 +1,15 @@
 import { useId, useRef, useState } from 'react';
+import { t } from '../i18n/he.js';
 import { SECTIONS } from '../data/gearCatalog.js';
 import { sectionStatus } from '../lib/stats.js';
 
 // Pastel fill + darker outline per section state.
 export const TINTS = {
-  done: { fill: '#b2f2bb', stroke: '#2f9e44', label: 'Sorted' },
-  partial: { fill: '#d0ebff', stroke: '#1c7ed6', label: 'In progress' },
-  borrow: { fill: '#ffe8cc', stroke: '#f08c00', label: 'Borrow' },
-  buy: { fill: '#ffd6d6', stroke: '#e03131', label: 'Buy' },
-  empty: { fill: '#f1f3f5', stroke: '#adb5bd', label: 'Not set' },
+  done: { fill: '#b2f2bb', stroke: '#2f9e44', label: 'מסודר' },
+  partial: { fill: '#d0ebff', stroke: '#1c7ed6', label: 'בתהליך' },
+  borrow: { fill: '#ffe8cc', stroke: '#f08c00', label: 'לשאול' },
+  buy: { fill: '#ffd6d6', stroke: '#e03131', label: 'לקנות' },
+  empty: { fill: '#f1f3f5', stroke: '#adb5bd', label: 'לא הוגדר' },
 };
 
 const SKIN = '#ffd8be';
@@ -98,7 +99,7 @@ export default function RiderFigure({ member, selected, onSelect, size = 280, in
       onPointerLeave={onPointerLeave}
     >
       <div className="figure-tilt" ref={tiltRef} style={{ '--px': 0, '--py': 0 }}>
-        <svg viewBox="0 0 240 400" className="figure-svg" aria-label={`${member.name}'s gear figure`}>
+        <svg viewBox="0 0 240 400" className="figure-svg" aria-label={t.rider.ariaFigure(member.name)}>
           <defs>
             <linearGradient id={`lens-${uid}`} x1="0" y1="0" x2="1" y2="1">
               <stop offset="0" stopColor="#fff" stopOpacity="0.9" />
@@ -193,7 +194,7 @@ export default function RiderFigure({ member, selected, onSelect, size = 280, in
       </div>
       {interactive && (
         <div className="figure-caption" aria-live="polite">
-          {hovered ? `${hovered.emoji} ${hovered.label} · ${tint(hovered.id).label}` : 'Tap a body part to open its gear'}
+          {hovered ? `${hovered.emoji} ${hovered.label} · ${tint(hovered.id).label}` : t.rider.hintFlat}
         </div>
       )}
     </div>

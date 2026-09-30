@@ -1,19 +1,46 @@
 rules_version = '2';
 
-// Anyone with the trip code can read/edit that trip (it's a shared secret, no passwords).
+// Anyone with the trip code can read/edit that trip (the code is the shared secret).
 // Clients sign in anonymously, and trip codes can't be listed, so strangers can't find trips.
+// The admin password is checked in the app (only its hash is stored); these rules only validate shapes.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null;
     }
 
+    function shortString(v, max) {
+      return v is string && v.size() <= max;
+    }
+
+    function validTrip(d) {
+      return d.keys().hasOnly(['name', 'createdAt', 'updatedAt', 'adminHash', 'info'])
+        && shortString(d.name, 60)
+        && (!('adminHash' in d) || shortString(d.adminHash, 64))
+        && (!('info' in d) || (d.info is map && d.info.size() <= 20));
+    }
+
     function validMember(d) {
-      return d.keys().hasOnly(['name', 'rider', 'color', 'items', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['name', 'rider', 'color', 'items', 'info', 'groupId', 'createdAt', 'updatedAt'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 30
         && d.rider in ['snowboard', 'ski']
         && d.color is string && d.color.size() <= 16
-        && d.items is map && d.items.size() <= 60;
+        && d.items is map && d.items.size() <= 60
+        && (!('info' in d) || (d.info is map && d.info.size() <= 20))
+        && (!('groupId' in d) || d.groupId == null || shortString(d.groupId, 40));
+    }
+
+    function validGroup(d) {
+      return d.keys().hasOnly(['name', 'emoji', 'items', 'createdAt', 'updatedAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 40
+        && shortString(d.emoji, 16)
+        && d.items is map && d.items.size() <= 100;
+    }
+
+    function validMessage(d) {
+      return d.keys().hasOnly(['text', 'pinned', 'createdAt', 'updatedAt'])
+        && d.text is string && d.text.size() > 0 && d.text.size() <= 500
+        && d.pinned is bool;
     }
 
     match /trips/{code} {
@@ -21,12 +48,24 @@ service cloud.firestore {
       allow list, delete: if false;
       allow create, update: if signedIn()
         && code.matches('^[A-Z0-9-]{3,24}$')
-        && request.resource.data.keys().hasOnly(['name', 'createdAt']);
+        && validTrip(request.resource.data);
 
       match /members/{memberId} {
         allow read: if signedIn();
         allow create, update: if signedIn() && validMember(request.resource.data);
-        allow delete: if false;
+        allow delete: if signedIn();
+      }
+
+      match /groups/{groupId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn() && validGroup(request.resource.data);
+        allow delete: if signedIn();
+      }
+
+      match /messages/{messageId} {
+        allow read: if signedIn();
+        allow create, update: if signedIn() && validMessage(request.resource.data);
+        allow delete: if signedIn();
       }
 
       match /requests/{requestId} {

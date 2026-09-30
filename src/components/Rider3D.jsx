@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from 'react';
+import { t } from '../i18n/he.js';
 import { Canvas } from '@react-three/fiber';
 import { ContactShadows, Environment, Float, Lightformer, OrbitControls, Outlines, RoundedBox } from '@react-three/drei';
 import { SECTIONS } from '../data/gearCatalog.js';
@@ -231,7 +232,7 @@ export default function Rider3D({ member, selected, onSelect, size = 300 }) {
   return (
     <div className="figure-stage rider-3d" style={{ width: '100%', maxWidth: size }}>
       <div className="canvas-wrap" style={{ height: size * 1.3 }}>
-        <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 1.6, 5.4], fov: 32 }} aria-label={`${member.name}'s 3D rider`}>
+        <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 1.6, 5.4], fov: 32 }} aria-label={t.rider.ariaFigure(member.name)}>
           <hemisphereLight args={['#ffffff', '#b9d4f0', 1.1]} />
           <directionalLight
             position={[3, 6, 4]}
@@ -272,7 +273,7 @@ export default function Rider3D({ member, selected, onSelect, size = 300 }) {
         </Canvas>
       </div>
       <div className="figure-caption" aria-live="polite">
-        {hovered ? `${hovered.emoji} ${hovered.label} · ${hoverState.label}` : 'Drag to spin · tap a body part to open its gear'}
+        {hovered ? `${hovered.emoji} ${hovered.label} · ${hoverState.label}` : t.rider.hint3d}
       </div>
     </div>
   );

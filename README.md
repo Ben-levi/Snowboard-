@@ -1,14 +1,19 @@
 # 🏔️ Snow Crew
 
-A light, fun gear tracker for a group ski/snowboard trip.
+A light, fun gear tracker for a group ski/snowboard trip. The UI is in **Hebrew** (right-to-left); all strings live in [`src/i18n/he.js`](src/i18n/he.js).
 
-- **My Gear**: a 3D rider on a dark studio stage (React Three Fiber). Drag to spin it, and tap a body part (helmet and goggles, jacket, gloves, pants, boots, board or skis, backpack) to open that section's gear dropdown. Snowboarders and skiers get their own model. The chips under the figure show each section's status. Browsers without WebGL (or `?flat=1`) get a lightweight 2.5D SVG rider instead.
-- **My to-do**: what you still need to buy or borrow, and which friends can lend each item, with one-tap requests.
-- **Crew**: everyone's figure and progress, plus a **"Who has…?"** search.
-- **Leaderboard**: ranked by number of items owned, with an animated podium, rows that slide when ranks change, and badges (🏆 Fully Geared, 🤝 Generous, 🛒 Shopper). You get confetti when you become Fully Geared or lend something.
-- **Requests**: ask to borrow, and the owner taps **Lend it** or **Decline**. Accepted items show up as "borrowed from X" and "lent to Y".
+- **Home (בית)**: the trip card (resort, dates with a countdown, flights, lodging, meeting point, emergency contact), messages from the admin, and **my details** (ski pass dates, insurance, rental, instructor and lessons, my group). A big button leads on to the gear page.
+- **My gear (הציוד שלי)**: a 3D rider on a dark studio stage (React Three Fiber). Drag to spin it, and tap a body part to open that section's gear dropdown. Snowboarders and skiers get their own model. Browsers without WebGL (or `?flat=1`) get a lightweight 2.5D SVG rider. Below it, **my to-do**: what's left to buy or borrow, and which friends can lend each item.
+- **Crew (החבר׳ה)**: three views:
+  - **people**: everyone's progress, plus a "who has…?" search
+  - **groups**: sub-groups (apartment, car, family), each with a shared list of things to bring or buy, and "I'll bring it"
+  - **leaderboard**: ranked by items owned, with a podium and badges
+- **Requests (בקשות)**: ask to borrow, and the owner lends or declines. Accepted items show as "borrowed from X" and "lent to Y".
+- **Admin (ניהול)**: behind the trip's admin password. Edit trip details, post and pin messages, set each person's instructor, lessons, group and other details, manage groups, and change the password.
 
-Join with a **trip code** (for example `ALPS26`) and pick your name. There are no passwords. Share the invite link (`?trip=ALPS26`) from the profile menu.
+Join with a **trip code** (for example `ALPS26`). A new code asks for a trip name and an **admin password**, and the creator is logged in as admin. Others unlock admin mode from the profile menu. Share the invite link (`?trip=ALPS26`) from the profile menu.
+
+**About the admin password:** only a SHA-256 hash of `CODE:password` is stored on the trip, and it is checked in the browser. That keeps friends out of the admin panel by accident, but it is not real security: anyone with the trip code can still write to the trip through Firestore. Trips created before passwords existed let the first person who opens the admin dialog set one.
 
 ## Run locally
 
@@ -18,7 +23,7 @@ npm run dev      # http://localhost:5173
 npm test         # unit tests for ranking/badges/status logic
 ```
 
-Without Firebase config the app runs in **demo mode**. Data stays in your browser, and 4 sample friends are pre-loaded so you can try everything (use "I'm someone else" in the profile menu to switch people).
+Without Firebase config the app runs in **demo mode**. Data stays in your browser, and new trips come with 4 sample friends, trip details, two groups and a welcome message so you can try everything (use "אני מישהו אחר" in the profile menu to switch people). The join screen also offers a ready-made **demo trip** (code `DEMO`) whose admin password is **`1234`**.
 
 ## Connect Firebase (so the crew shares one live list)
 
@@ -41,7 +46,12 @@ The Firebase web config isn't secret (it ships to every browser). Access is cont
 ## Project layout
 
 ```
+src/i18n/he.js              every UI string (Hebrew)
 src/data/gearCatalog.js     gear sections + items (ski / snowboard aware)
+src/data/infoFields.js      trip details + personal details form fields
+src/lib/admin.js            admin password hashing + session check
+src/lib/groups.js           group lists: progress, who brings what
+src/lib/tripInfo.js         trip dates, countdown, message order
 src/lib/stats.js            owned count, readiness, badges, ranking
 src/lib/store/              Firestore adapter + localStorage demo adapter (same interface)
 src/components/RiderModel   the Blender-built rider (glTF) on a dark studio stage
@@ -50,7 +60,8 @@ src/components/RiderSpline  rider designed in Spline (optional, via VITE_SPLINE_
 src/components/RiderStage   picks Spline → rider model → built-in 3D → SVG, with fallbacks
 tools/blender/              scripts that build the rider models
 src/components/RiderFigure  the 2.5D parallax SVG rider (fallback + crew mini cards)
-src/components/…            GearView, GearSection, ShoppingList, CrewView, Leaderboard, RequestsInbox
+src/components/…            HomeView, GearView, GearSection, ShoppingList, CrewView, GroupsView,
+                            Leaderboard, RequestsInbox, AdminPanel, JoinScreen
 ```
 
 ## The rider models

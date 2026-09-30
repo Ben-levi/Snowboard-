@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { t } from '../i18n/he.js';
 import { Application } from '@splinetool/runtime';
 import { SECTIONS } from '../data/gearCatalog.js';
 import { sectionStatus } from '../lib/stats.js';
@@ -78,7 +79,7 @@ export default function RiderSpline({ member, onSelect, size = 300 }) {
       <div className="figure-caption" aria-live="polite">
         {hovered
           ? `${hovered.emoji} ${hovered.label} · ${TINTS[sectionStatus(member, hovered.id)].label}`
-          : 'Tap a body part to open its gear'}
+          : t.rider.hintFlat}
       </div>
     </div>
   );

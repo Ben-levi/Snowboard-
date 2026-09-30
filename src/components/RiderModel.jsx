@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { ContactShadows, Environment, Lightformer, OrbitControls, useGLTF } from '@react-three/drei';
+import { t } from '../i18n/he.js';
 import { SECTIONS } from '../data/gearCatalog.js';
 import { sectionStatus } from '../lib/stats.js';
 import { sectionFromObjectName } from '../lib/splineScene.js';
@@ -83,7 +84,7 @@ export default function RiderModel({ member, onSelect, size = 300 }) {
   return (
     <div className="figure-stage rider-3d rider-model" style={{ width: '100%', maxWidth: size }}>
       <div className="canvas-wrap stage-dark" style={{ height: size * 1.35 }}>
-        <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 1.15, 3.9], fov: 30 }} aria-label={`${member.name}'s rider`}>
+        <Canvas shadows dpr={[1, 2]} camera={{ position: [0, 1.15, 3.9], fov: 30 }} aria-label={t.rider.ariaFigure(member.name)}>
           <ambientLight intensity={0.25} />
           <directionalLight position={[-2.5, 4, 3]} intensity={2.2} color="#fff0e0" castShadow shadow-mapSize={[1024, 1024]} />
           <pointLight position={[-2.2, 1.8, -2.2]} intensity={14} color="#9fd8ff" />
@@ -113,7 +114,7 @@ export default function RiderModel({ member, onSelect, size = 300 }) {
       <div className="figure-caption" aria-live="polite">
         {hovered
           ? `${hovered.emoji} ${hovered.label} · ${TINTS[sectionStatus(member, hovered.id)].label}`
-          : 'Drag to spin · tap the rider to open gear'}
+          : t.rider.hint3d}
       </div>
     </div>
   );

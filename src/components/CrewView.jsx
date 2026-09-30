@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { GEAR } from '../data/gearCatalog.js';
+import { motion } from 'motion/react';
+import { t } from '../i18n/he.js';
+import { GEAR, STATUS_BY_ID } from '../data/gearCatalog.js';
 import { itemOf } from '../lib/store/index.js';
 import { badges, countByStatus, ownedCount, readiness } from '../lib/stats.js';
 import Avatar from './Avatar.jsx';
 import GearView from './GearView.jsx';
+import GroupsView from './GroupsView.jsx';
+import Leaderboard from './Leaderboard.jsx';
 
 function MemberCard({ member, isMe, onOpen }) {
   const counts = countByStatus(member);
@@ -19,10 +23,10 @@ function MemberCard({ member, isMe, onOpen }) {
       </div>
       <div className="member-info">
         <div className="member-name">
-          <Avatar member={member} size={22} /> {member.name} {isMe && <span className="you">you</span>}
+          <Avatar member={member} size={22} /> {member.name} {isMe && <span className="you">{t.you}</span>}
         </div>
-        <div className="muted small">{member.rider === 'ski' ? '⛷️ Skier' : '🏂 Snowboarder'}</div>
-        <div className="progress" aria-label={`${pct}% ready`}>
+        <div className="muted small">{t.riders[member.rider === 'ski' ? 'ski' : 'snowboard']}</div>
+        <div className="progress" aria-label={t.crew.ready(pct)}>
           <span style={{ width: `${pct}%`, background: member.color }} />
         </div>
         <div className="mini-stats">
@@ -43,9 +47,9 @@ function WhoHas({ members, me, onRequest, requests }) {
   return (
     <div className="card who-has">
       <label className="field inline">
-        <span>🔎 Who has…</span>
+        <span>{t.crew.whoHas}</span>
         <select value={itemId} onChange={(e) => setItemId(e.target.value)}>
-          <option value="">Pick an item</option>
+          <option value="">{t.crew.pickItem}</option>
           {GEAR.map((g) => (
             <option key={g.id} value={g.id}>{g.emoji} {g.label}</option>
           ))}
@@ -54,8 +58,8 @@ function WhoHas({ members, me, onRequest, requests }) {
       {itemId && (
         <div className="who-results">
           <div>
-            <h4>Has one ({owners.length})</h4>
-            {owners.length === 0 && <p className="muted small">Nobody yet</p>}
+            <h4>{t.crew.hasOne(owners.length)}</h4>
+            {owners.length === 0 && <p className="muted small">{t.crew.nobodyYet}</p>}
             {owners.map((m) => {
               const it = itemOf(m, itemId);
               const pending = requests.some(
@@ -66,10 +70,10 @@ function WhoHas({ members, me, onRequest, requests }) {
                   <Avatar member={m} size={24} /> {m.name}
                   {it.note && <span className="muted small"> · {it.note}</span>}
                   {it.lentTo ? (
-                    <span className="badge badge-borrowed">lent out</span>
+                    <span className="badge badge-borrowed">{t.crew.lentOut}</span>
                   ) : it.lendable && m.id !== me.id ? (
                     <button className="btn btn-small" disabled={pending} onClick={() => onRequest(itemId, m.id)}>
-                      {pending ? 'Asked ✓' : 'Ask'}
+                      {pending ? t.crew.asked : t.crew.ask}
                     </button>
                   ) : null}
                 </div>
@@ -77,12 +81,12 @@ function WhoHas({ members, me, onRequest, requests }) {
             })}
           </div>
           <div>
-            <h4>Needs one ({needers.length})</h4>
-            {needers.length === 0 && <p className="muted small">Nobody</p>}
+            <h4>{t.crew.needsOne(needers.length)}</h4>
+            {needers.length === 0 && <p className="muted small">{t.crew.nobody}</p>}
             {needers.map((m) => (
               <div key={m.id} className="who-row">
                 <Avatar member={m} size={24} /> {m.name}
-                <span className={`badge badge-${itemOf(m, itemId).status}`}>{itemOf(m, itemId).status}</span>
+                <span className={`badge badge-${itemOf(m, itemId).status}`}>{STATUS_BY_ID[itemOf(m, itemId).status].short}</span>
               </div>
             ))}
           </div>
@@ -92,16 +96,16 @@ function WhoHas({ members, me, onRequest, requests }) {
   );
 }
 
-export default function CrewView({ tripCode, members, me, requests, onRequest }) {
+function People({ tripCode, members, me, requests, onRequest }) {
   const [openId, setOpenId] = useState(null);
   const open = members.find((m) => m.id === openId);
 
   if (open) {
     return (
       <div>
-        <button className="btn btn-link" onClick={() => setOpenId(null)}>← Back to crew</button>
+        <button className="btn btn-link" onClick={() => setOpenId(null)}>{t.crew.backToCrew}</button>
         <h2 className="view-title">
-          <Avatar member={open} /> {open.name}'s gear
+          <Avatar member={open} /> {t.gear.gearOf(open.name)}
         </h2>
         <GearView
           tripCode={tripCode}
@@ -124,6 +128,28 @@ export default function CrewView({ tripCode, members, me, requests, onRequest })
           <MemberCard key={m.id} member={m} isMe={m.id === me.id} onOpen={setOpenId} />
         ))}
       </div>
+    </div>
+  );
+}
+
+const VIEWS = ['people', 'groups', 'board'];
+
+// The crew tab: people, groups (apartment / car / family) and the leaderboard.
+export default function CrewView({ tripCode, members, groups, me, isAdmin, requests, onRequest }) {
+  const [view, setView] = useState('people');
+  return (
+    <div>
+      <div className="sub-tabs" role="tablist">
+        {VIEWS.map((v) => (
+          <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'on' : ''} onClick={() => setView(v)}>
+            {view === v && <motion.span layoutId="sub-pill" className="sub-pill" transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />}
+            <span className="tab-content">{t.crewTabs[v]}</span>
+          </button>
+        ))}
+      </div>
+      {view === 'people' && <People tripCode={tripCode} members={members} me={me} requests={requests} onRequest={onRequest} />}
+      {view === 'groups' && <GroupsView tripCode={tripCode} groups={groups} members={members} me={me} isAdmin={isAdmin} />}
+      {view === 'board' && <Leaderboard members={members} me={me} />}
     </div>
   );
 }

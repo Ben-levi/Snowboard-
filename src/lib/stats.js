@@ -49,9 +49,9 @@ export function isFullyGeared(member) {
 export function badges(member) {
   const out = [];
   const counts = countByStatus(member);
-  if (isFullyGeared(member)) out.push({ id: 'geared', emoji: '🏆', label: 'Fully Geared' });
-  if (lentCount(member) >= 2) out.push({ id: 'generous', emoji: '🤝', label: 'Generous' });
-  if (counts.buy >= 5) out.push({ id: 'shopper', emoji: '🛒', label: 'Shopper' });
+  if (isFullyGeared(member)) out.push({ id: 'geared', emoji: '🏆', label: 'מאובזר לגמרי' });
+  if (lentCount(member) >= 2) out.push({ id: 'generous', emoji: '🤝', label: 'נדיב' });
+  if (counts.buy >= 5) out.push({ id: 'shopper', emoji: '🛒', label: 'קניין' });
   return out;
 }
 

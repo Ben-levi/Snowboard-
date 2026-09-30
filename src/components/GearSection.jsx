@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import { t } from '../i18n/he.js';
 import { gearInSection, STATUS_BY_ID } from '../data/gearCatalog.js';
 import { itemOf } from '../lib/store/index.js';
 import { sectionStatus } from '../lib/stats.js';
@@ -13,7 +14,7 @@ function NoteInput({ value, onSave }) {
   return (
     <input
       className="note-input"
-      placeholder="Brand, size, notes…"
+      placeholder={t.gear.notePlaceholder}
       maxLength={60}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
@@ -24,7 +25,7 @@ function NoteInput({ value, onSave }) {
 }
 
 function StatusBadge({ status }) {
-  if (!status) return <span className="badge badge-empty">Not set</span>;
+  if (!status) return <span className="badge badge-empty">{t.notSet}</span>;
   return <span className={`badge badge-${status}`}>{STATUS_BY_ID[status].short}</span>;
 }
 
@@ -36,17 +37,17 @@ function ItemRow({ gear, item, editable, nameOf, onChange, borrowAction }) {
         <div className="item-text">
           <span className="item-label">
             {gear.label}
-            {gear.essential && <span className="essential" title="Essential">*</span>}
+            {gear.essential && <span className="essential" title={t.gear.essential}>*</span>}
           </span>
           <span className="item-meta">
-            {item.status === 'borrowed' && item.borrowedFrom && <>🤝 from {nameOf(item.borrowedFrom)} </>}
-            {item.lentTo && <>📤 lent to {nameOf(item.lentTo)} </>}
+            {item.status === 'borrowed' && item.borrowedFrom && <>{t.gear.from(nameOf(item.borrowedFrom))}</>}
+            {item.lentTo && <>{t.gear.lentTo(nameOf(item.lentTo))}</>}
             {!editable && item.note && <>· {item.note}</>}
-            {!editable && item.status === 'own' && item.lendable && !item.lentTo && <span className="lendable">can lend</span>}
+            {!editable && item.status === 'own' && item.lendable && !item.lentTo && <span className="lendable">{t.gear.canLend}</span>}
           </span>
         </div>
         {editable ? (
-          <div className="chips" role="radiogroup" aria-label={`${gear.label} status`}>
+          <div className="chips" role="radiogroup" aria-label={t.gear.statusOf(gear.label)}>
             {CHOICES.map((s) => {
               // A borrowed item lights up the Borrow chip in its own "sorted" style.
               const borrowed = s === 'borrow' && item.status === 'borrowed';
@@ -61,7 +62,7 @@ function ItemRow({ gear, item, editable, nameOf, onChange, borrowAction }) {
                   className={`chip chip-${s}${on ? ' on' : ''}${borrowed ? ' borrowed' : ''}`}
                   onClick={() => onChange({ status: on ? null : s, borrowedFrom: null })}
                 >
-                  {borrowed ? 'Borrowed ✓' : STATUS_BY_ID[s].short}
+                  {borrowed ? t.gear.borrowedDone : STATUS_BY_ID[s].short}
                 </motion.button>
               );
             })}
@@ -83,7 +84,7 @@ function ItemRow({ gear, item, editable, nameOf, onChange, borrowAction }) {
               disabled={Boolean(item.lentTo)}
               onChange={(e) => onChange({ lendable: e.target.checked })}
             />
-            <span>Happy to lend</span>
+            <span>{t.gear.happyToLend}</span>
           </label>
         </div>
       )}

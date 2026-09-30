@@ -38,3 +38,6 @@ export function takeBackRequest(code, request, members) {
     toItem: owner && { ...itemOf(owner, request.itemId), lentTo: null },
   });
 }
+
+// Demo mode's sample trip (admin password 1234).
+export const DEMO_TRIP = 'DEMO';
