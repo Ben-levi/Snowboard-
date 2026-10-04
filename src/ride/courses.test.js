@@ -34,6 +34,7 @@ describe('courses', () => {
     const run = createRun(courses[0]);
     const gates = courses[0].gates;
     expect(updateRun(run, 500, 500, 0)).toEqual({}); // nowhere near the start
+    expect(updateRun(run, gates[0].x, gates[0].z, 0.5, 0)).toEqual({}); // standing in the start gate
     expect(updateRun(run, gates[0].x, gates[0].z, 1).started).toBe(true);
     let finished;
     gates.slice(1).forEach((g, i) => {

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { createObstacleIndex } from './obstacles.js';
+import { createObstacleIndex, pointInRing } from './obstacles.js';
 import { layoutLift } from './lifts.js';
+import { buildCourses } from './courses.js';
 
 // European piste colours (Grandvalira uses green, blue, red and black).
 export const DIFFICULTY_COLORS = {
@@ -208,6 +209,100 @@ export function prepareFeatures(resort, quality) {
     }
   }
 
+  // ---- Which piste is here? (for the HUD) ----
+  const CELL = 40;
+  const grid = new Map();
+  const cellKey = (i, j) => `${i},${j}`;
+  const addTo = (i, j, item) => {
+    const k = cellKey(i, j);
+    if (!grid.has(k)) grid.set(k, []);
+    grid.get(k).push(item);
+  };
+  for (const p of f.pistes) {
+    if (!p.name) continue;
+    for (let i = 1; i < p.line.length; i++) {
+      const [ax, az] = p.line[i - 1];
+      const [bx, bz] = p.line[i];
+      const seg = { p, ax, az, bx, bz };
+      const i0 = Math.floor((Math.min(ax, bx) - 20) / CELL);
+      const i1 = Math.floor((Math.max(ax, bx) + 20) / CELL);
+      const j0 = Math.floor((Math.min(az, bz) - 20) / CELL);
+      const j1 = Math.floor((Math.max(az, bz) + 20) / CELL);
+      for (let ci = i0; ci <= i1; ci++) for (let cj = j0; cj <= j1; cj++) addTo(ci, cj, seg);
+    }
+  }
+  for (const a of f.pisteAreas) {
+    if (!a.name) continue;
+    let minX = Infinity;
+    let minZ = Infinity;
+    let maxX = -Infinity;
+    let maxZ = -Infinity;
+    for (const [x, z] of a.ring) {
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minZ = Math.min(minZ, z);
+      maxZ = Math.max(maxZ, z);
+    }
+    const area = { p: a, ring: a.ring };
+    for (let ci = Math.floor(minX / CELL); ci <= Math.floor(maxX / CELL); ci++)
+      for (let cj = Math.floor(minZ / CELL); cj <= Math.floor(maxZ / CELL); cj++) addTo(ci, cj, area);
+  }
+  function pisteAt(x, z) {
+    const list = grid.get(cellKey(Math.floor(x / CELL), Math.floor(z / CELL)));
+    if (!list) return null;
+    let best = null;
+    let bestD = 18;
+    for (const it of list) {
+      if (it.ring) {
+        if (!best && pointInRing(x, z, it.ring)) best = it.p;
+        continue;
+      }
+      const dx = it.bx - it.ax;
+      const dz = it.bz - it.az;
+      const l2 = dx * dx + dz * dz || 1;
+      const t = Math.min(1, Math.max(0, ((x - it.ax) * dx + (z - it.az) * dz) / l2));
+      const d = Math.hypot(x - (it.ax + t * dx), z - (it.az + t * dz));
+      if (d < bestD) {
+        bestD = d;
+        best = it.p;
+      }
+    }
+    return best;
+  }
+
+  // ---- Where to start: the top of each lift, facing the best way down ----
+  const starts = lifts
+    .filter((l) => l.kind !== 'carpet' && l.length > 200)
+    .map((l) => {
+      const top = l.towers.at(-1);
+      const inbound = [top.dirX, top.dirZ];
+      let best = null;
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const dx = Math.sin(a);
+        const dz = Math.cos(a);
+        if (dx * -inbound[0] + dz * -inbound[1] > 0.6) continue; // not back down the lift line
+        const drop = top.y0 - near.heightAt(top.x + dx * 40, top.z + dz * 40);
+        if (!best || drop > best.drop) best = { drop, dx, dz };
+      }
+      const r = l.kind === 'drag' ? 6 : 12;
+      return {
+        id: l.id,
+        name: l.name || l.type,
+        kind: l.kind,
+        x: top.x + best.dx * r,
+        z: top.z + best.dz * r,
+        y: top.y0,
+        heading: Math.atan2(best.dx, best.dz),
+      };
+    })
+    .sort((a, b) => b.y - a.y);
+
+  const courses = buildCourses(
+    f.pistes.filter((p) => p.line.every(([x, z]) => near.inside(x, z, 40))),
+    near.heightAt,
+  );
+
   const texture = new THREE.CanvasTexture(canvas);
   texture.flipY = false;
   texture.colorSpace = THREE.NoColorSpace;
@@ -223,6 +318,9 @@ export function prepareFeatures(resort, quality) {
     lifts,
     trees,
     markers,
+    pisteAt,
+    starts,
+    courses,
     pistes: f.pistes,
     pisteAreas: f.pisteAreas,
     peaks: f.peaks,

@@ -60,9 +60,43 @@ src/components/RiderSpline  rider designed in Spline (optional, via VITE_SPLINE_
 src/components/RiderStage   picks Spline → rider model → built-in 3D → SVG, with fallbacks
 tools/blender/              scripts that build the rider models
 src/components/RiderFigure  the 2.5D parallax SVG rider (fallback + crew mini cards)
+src/ride/                   the snowboard simulation (ride.html): terrain, physics, lifts, runs, HUD
+tools/resort/               bakes real terrain + OpenStreetMap data for the simulation
 src/components/…            HomeView, GearView, GearSection, ShoppingList, CrewView, GroupsView,
                             Leaderboard, RequestsInbox, AdminPanel, JoinScreen
 ```
+
+## Ride: snowboard simulation of Pas de la Casa
+
+`ride.html` (live at `…/Snowboard-/ride.html`) is a 3D snowboard simulation on the **real terrain of Pas de la Casa** (Grandvalira, Andorra). It's a separate page that shares only the rider model with the gear app.
+
+- **Free ride** from the top of any of the resort's real lifts, or **timed runs** down 46 named pistes. A run has gates every 150 m, a +5 s penalty for each missed gate, and best times saved in the browser.
+- **Desktop controls:** keyboard (A/D or ←/→ to edge and turn, W to tuck or skate, S to brake, hold and release Space to ollie, R to restart, C to switch camera, M or Esc for the menu) or a gamepad.
+- **Phone controls:** a thumb stick, jump and brake buttons, and optional tilt steering. Graphics quality drops automatically on phones (`?q=low|medium|high` overrides it).
+- **Physics** (`src/ride/physics.js`, unit tested):
+  - gravity along the slope, snow friction (lower on groomed pistes) and air drag
+  - carving on the board's sidecut, side-slipping on a flat base, skid braking
+  - ollies, take-offs over convex rolls, and landing checks
+  - collisions with trees, lift towers and buildings
+
+### The resort data
+
+`tools/resort/bake.mjs` bakes a resort (configured in `tools/resort/resorts/<id>.json`) into `public/resort/<id>/`:
+
+| File | What | Source |
+| --- | --- | --- |
+| `height.bin`, `meta.json` | 1024×960 height grid, 7.2 m cells (7.4 × 6.9 km), lightly smoothed | [AWS Terrain Tiles](https://registry.opendata.aws/terrain-tiles/) (Terrarium, z14) |
+| `far.bin` | 30 km horizon grid | same, z11 |
+| `features.json` | pistes (name, difficulty), lifts, buildings, roads, peaks | [OpenStreetMap](https://www.openstreetmap.org/copyright) via Overpass, © OpenStreetMap contributors (ODbL) |
+
+```bash
+npm run bake:resort                                        # terrain + OSM
+node tools/resort/bake.mjs pas-de-la-casa --skip-osm       # terrain only
+```
+
+The **Bake resort** GitHub workflow (Actions → Bake resort → Run workflow) runs the same bake on GitHub's runners and commits the result. That's useful where Overpass isn't reachable.
+
+Trees are placed procedurally, because OSM has no forest mapped here: below a ~2,250 m treeline, and off pistes, roads, buildings and lift lines. Peaks come out ~50 m lower than their mapped heights because the source elevation data is ~30 m resolution.
 
 ## The rider models
 

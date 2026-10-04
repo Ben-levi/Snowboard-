@@ -4,10 +4,14 @@ import { Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import { step, STEP } from './physics.js';
 import { readInput, takePressed } from './input.js';
+import { updateRun } from './courses.js';
+import { updateAudio } from './audio.js';
+import { SnowSpray, Trail } from './Effects.jsx';
 import { createTerrainMaterial } from './terrainMaterial.js';
 import { FarTerrain, NearTerrain } from './Terrain.jsx';
 import Rider from './Rider.jsx';
 import { Lifts, PisteMarkers, Trees, Village } from './Scenery.jsx';
+import Gates from './Gates.jsx';
 
 // Late-morning sun from the south-east (the resort's main slopes face north and east).
 export const SUN_DIR = new THREE.Vector3(0.45, 0.62, 0.64).normalize();
@@ -35,17 +39,31 @@ function Simulation({ sim, world, onEvents }) {
     const dt = Math.min(rawDt, 0.1);
     const input = readInput(dt);
     sim.current.input = input;
-    if (takePressed('KeyR')) sim.current.reset();
+    if (takePressed('KeyR')) sim.current.restart();
     if (takePressed('KeyC')) sim.current.camMode = sim.current.camMode === 'chase' ? 'first' : 'chase';
+    // Effects for this frame (spray, sound): strongest carve/skid, any landing or crash.
+    const fx = { carve: 0, skid: 0 };
     if (!sim.current.paused) {
       acc.current += dt;
       while (acc.current >= STEP) {
         const e = step(sim.current.rider, input, world);
         acc.current -= STEP;
+        fx.carve = Math.max(fx.carve, e.carve);
+        fx.skid = Math.max(fx.skid, e.skid);
+        if (e.landed) fx.landed = true;
+        if (e.crashed) fx.crashed = true;
         if (e.jumped || e.landed || e.crashed) onEvents?.(e);
+      }
+      const r = sim.current.rider;
+      if (sim.current.run) {
+        const ev = updateRun(sim.current.run, r.x, r.z, r.time, r.speed);
+        if (ev.started || ev.gate !== undefined || ev.finished) onEvents?.({ run: ev });
       }
     }
     const s = sim.current.rider;
+    const prev = sim.current.fx;
+    sim.current.fx = prev ? { carve: Math.max(prev.carve ?? 0, fx.carve), skid: Math.max(prev.skid ?? 0, fx.skid), landed: prev.landed || fx.landed, crashed: prev.crashed || fx.crashed } : fx;
+    updateAudio(s, fx, sim.current.paused);
     if (sim.current.snapCamera) {
       first.current = true;
       sim.current.snapCamera = false;
@@ -58,7 +76,8 @@ function Simulation({ sim, world, onEvents }) {
     const k = first.current ? 1 : 1 - Math.exp(-dt * 2.5);
     camDir.lerp(want, k).normalize();
     const firstPerson = sim.current.camMode === 'first';
-    const dist = firstPerson ? -0.2 : 6.2 + Math.min(hv, 30) * 0.08;
+    const portrait = camera.aspect < 1 ? 1.35 : 1;
+    const dist = firstPerson ? -0.2 : (6.2 + Math.min(hv, 30) * 0.08) * portrait;
     const height = firstPerson ? 1.6 : 2.4 + Math.min(hv, 30) * 0.03;
     want.set(s.x - camDir.x * dist, s.y + height, s.z - camDir.z * dist);
     const ground = world.heightAt(want.x, want.z) + 1.2;
@@ -100,7 +119,7 @@ function Simulation({ sim, world, onEvents }) {
   );
 }
 
-export default function World({ resort, sim, quality, onEvents, children }) {
+export default function World({ resort, sim, quality, course, onEvents, children }) {
   const material = useMemo(() => createTerrainMaterial({ sparkle: quality.sparkle, detail: quality.detail ?? 1 }), [quality.sparkle, quality.detail]);
   const farMaterial = useMemo(() => {
     const m = createTerrainMaterial({ sparkle: 0, detail: 0 });
@@ -121,17 +140,20 @@ export default function World({ resort, sim, quality, onEvents, children }) {
       <color attach="background" args={['#a9c6e3']} />
       <fog attach="fog" args={['#c6d8ea', 1200, 16000]} />
       <Sky sunPosition={SKY_SUN} distance={40000} turbidity={2.2} rayleigh={0.6} mieCoefficient={0.004} mieDirectionalG={0.85} />
-      <hemisphereLight args={['#9cc2ff', '#eef2f8', 0.55]} />
+      <hemisphereLight args={['#b8d0ff', '#eef2f8', 0.85]} />
       <Simulation sim={sim} world={sim.current.world} onEvents={onEvents} />
       <NearTerrain field={resort.near} material={material} lodScale={quality.lodScale} />
       <FarTerrain far={resort.far} near={resort.near} material={farMaterial} />
       <Suspense fallback={null}>
         <Rider sim={sim} world={resort.near} />
       </Suspense>
+      <SnowSpray sim={sim} />
+      <Trail sim={sim} world={resort.near} />
       <Village buildings={features.buildings} />
       <Lifts lifts={features.lifts} quality={quality} />
       <Trees trees={features.trees} quality={quality} />
       <PisteMarkers markers={features.markers} />
+      {course && <Gates key={course.id} sim={sim} course={course} heightAt={resort.near.heightAt} />}
       {children}
     </>
   );

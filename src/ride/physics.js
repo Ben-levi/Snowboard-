@@ -213,10 +213,12 @@ export function step(s, input, world, dt = STEP, P = PARAMS) {
     const pivotW = clamp(1 - speed / 4, 0, 1);
     s.heading -= steer * P.pivot * pivotW * dt;
 
-    // Sideways slip relative to the (turned) board is braked; throwing the board sideways (brake) adds more.
+    // Sideways slip relative to the (turned) board is braked: hard on an edge, gently on a flat base
+    // (so a flat board side-slips down the fall line). Throwing the board sideways (brake) adds more.
     const axes = boardAxes(s.heading, n);
     const vl = s.vx * axes.r[0] + s.vy * axes.r[1] + s.vz * axes.r[2];
-    const slipDecel = (P.skid + P.brake * brake) * dt;
+    const edgeGrip = 0.25 + 0.75 * Math.min(1, Math.abs(s.edge) / P.maxEdge);
+    const slipDecel = (P.skid * edgeGrip + P.brake * brake) * dt;
     const newVl = Math.sign(vl) * Math.max(0, Math.abs(vl) - slipDecel);
     s.vx += (newVl - vl) * axes.r[0];
     s.vy += (newVl - vl) * axes.r[1];

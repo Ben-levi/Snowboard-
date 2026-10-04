@@ -11,7 +11,7 @@ const len = (pts) => {
   return l;
 };
 
-export function buildCourses(pistes, heightAt, { minLength = 300, join = 35 } = {}) {
+export function buildCourses(pistes, heightAt, { minLength = 300, minDrop = 25, join = 35 } = {}) {
   const groups = new Map();
   for (const p of pistes) {
     if (!p.name || p.line.length < 2) continue;
@@ -51,6 +51,7 @@ export function buildCourses(pistes, heightAt, { minLength = 300, join = 35 } = 
       if (!best || l > best.length) best = { line: chain, length: l, parts };
     }
     if (!best || best.length < minLength) continue;
+    if (heightAt(...best.line[0]) - heightAt(...best.line.at(-1)) < minDrop) continue;
     const difficulty = best.parts.map((p) => p.difficulty).find(Boolean) ?? '';
     const top = heightAt(...best.line[0]);
     const bottom = heightAt(...best.line.at(-1));
@@ -96,14 +97,15 @@ export function createRun(course) {
   return { course, next: 0, started: false, finished: false, startTime: 0, time: 0, missed: 0 };
 }
 
-// Advance a run with the rider's position at time t (s). Returns what happened this update.
-export function updateRun(run, x, z, t) {
+// Advance a run with the rider's position at time t (s). The clock starts when the rider sets off
+// from the start gate (speed above 1.5 m/s). Returns what happened this update.
+export function updateRun(run, x, z, t, speed = Infinity) {
   const ev = {};
   if (run.finished) return ev;
   const gates = run.course.gates;
   const near = (g) => Math.hypot(x - g.x, z - g.z) < GATE_RADIUS;
   if (!run.started) {
-    if (near(gates[0])) {
+    if (near(gates[0]) && speed > 1.5) {
       run.started = true;
       run.startTime = t;
       run.next = 1;
