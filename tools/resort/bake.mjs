@@ -219,7 +219,7 @@ async function bakeOsm() {
   way["highway"~"^(motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|track)$"](${bb});
   node["natural"="peak"](${bb});
 );
-out geom tags;`;
+out geom;`;
   let data;
   for (const url of OVERPASS) {
     try {
@@ -240,7 +240,7 @@ out geom tags;`;
   const local = (geom) => geom.filter(Boolean).map((p) => proj.toLocal(p.lon, p.lat).map((v) => Math.round(v * 10) / 10));
   const line = (geom, tol = 1.5) => simplify(local(geom), tol);
   const closed = (pts) => pts.length > 3 && pts[0][0] === pts.at(-1)[0] && pts[0][1] === pts.at(-1)[1];
-  const outerRings = (rel) => rel.members.filter((m) => m.type === 'way' && m.role !== 'inner' && m.geometry).map((m) => line(m.geometry, 3));
+  const outerRings = (rel) => (rel.members ?? []).filter((m) => m.type === 'way' && m.role !== 'inner' && m.geometry).map((m) => line(m.geometry, 3));
 
   const out = { pistes: [], pisteAreas: [], pisteRoutes: [], lifts: [], forests: [], buildings: [], roads: [], peaks: [] };
   for (const el of data.elements) {
@@ -257,7 +257,7 @@ out geom tags;`;
         grooming: t['piste:grooming'] ?? '',
       };
       if (el.type === 'relation') {
-        const parts = el.members.filter((m) => m.type === 'way' && m.geometry).map((m) => line(m.geometry));
+        const parts = (el.members ?? []).filter((m) => m.type === 'way' && m.geometry).map((m) => line(m.geometry));
         if (parts.length) out.pisteRoutes.push({ ...info, parts });
       } else if (el.geometry) {
         const pts = line(el.geometry);
