@@ -1,0 +1,37 @@
+name: Bake resort
+
+# Fetches real terrain (AWS Terrain Tiles) and OpenStreetMap data (Overpass) for a resort
+# and commits the result to public/resort/<id>/ on the branch it runs on.
+on:
+  workflow_dispatch:
+    inputs:
+      resort:
+        description: Resort id (tools/resort/resorts/<id>.json)
+        default: pas-de-la-casa
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: node tools/resort/bake.mjs "${{ inputs.resort }}"
+      - name: Commit baked files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "public/resort/${{ inputs.resort }}"
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Bake resort ${{ inputs.resort }} (terrain + OpenStreetMap)"
+            git push
+          fi

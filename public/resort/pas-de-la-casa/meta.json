@@ -1,0 +1,26 @@
+{
+  "id": "pas-de-la-casa",
+  "name": "Pas de la Casa",
+  "region": "Grandvalira, Andorra",
+  "center": [
+    1.7275,
+    42.5425
+  ],
+  "scale": 0.05,
+  "near": {
+    "cols": 1024,
+    "rows": 960,
+    "cell": 7.2,
+    "base": 1665,
+    "min": 1665.1748046875,
+    "max": 2850.903076171875
+  },
+  "far": {
+    "cols": 256,
+    "rows": 256,
+    "cell": 117.1875,
+    "base": 989,
+    "min": 989.7853393554688,
+    "max": 2898.513671875
+  }
+}
