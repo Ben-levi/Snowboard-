@@ -28,6 +28,7 @@ export const PARAMS = {
   impact: 7, // m/s into an obstacle = crash
   radius: 0.45, // rider collision radius
   edgeMargin: 25, // m kept inside the map
+  stick: 0.012, // m: the board rides over kinks this small instead of taking off (the grid is 7 m)
 };
 
 export function createRider(world, x, z, heading = 0) {
@@ -239,7 +240,7 @@ export function step(s, input, world, dt = STEP, P = PARAMS) {
       s.airTime = 0;
       s.charge = 0;
       events.jumped = true;
-    } else if ((yBallistic - ground) / (dt * dt) > g * n2[1]) {
+    } else if (yBallistic - ground > g * n2[1] * dt * dt + P.stick) {
       // The snow drops away faster than the board can follow: take off.
       s.y = yBallistic;
       s.airborne = true;
@@ -279,7 +280,8 @@ export function step(s, input, world, dt = STEP, P = PARAMS) {
         }
       }
       const off = Math.acos(clamp(align, -1, 1));
-      if (-vn > P.hardLanding || (tl > 3 && off > P.landTolerance)) {
+      // Little hops over bumps never count as a bad landing.
+      if (-vn > P.hardLanding || (tl > 3 && s.airTime > 0.35 && off > P.landTolerance)) {
         crash(s, events);
       } else {
         events.landed = { airTime: s.airTime, off };
