@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { createRider, findSpawn } from './physics.js';
 import { loadResort } from './terrainData.js';
+import { prepareFeatures } from './resortFeatures.js';
 import { attachKeyboard } from './input.js';
 import { pickQuality } from './quality.js';
 import { t } from './he.js';
@@ -11,11 +12,13 @@ import Hud from './Hud.jsx';
 const RESORT = 'pas-de-la-casa';
 
 // Everything the simulation needs, kept in one mutable object (read by the 3D loop and the HUD).
-function createSim(resort) {
+function createSim(resort, features) {
   const near = resort.near;
   const world = {
     heightAt: near.heightAt,
     normalAt: near.normalAt,
+    surfaceAt: features.surfaceAt,
+    obstaclesNear: features.obstaclesNear,
     x0: near.x0,
     z0: near.z0,
     width: near.width,
@@ -24,6 +27,7 @@ function createSim(resort) {
   const spawn = findSpawn(near);
   const sim = {
     resort,
+    features,
     world,
     spawn,
     rider: createRider(world, spawn.x, spawn.z, spawn.heading),
@@ -48,12 +52,12 @@ export default function RideApp() {
   useEffect(() => {
     loadResort(RESORT)
       .then((r) => {
-        sim.current = createSim(r);
+        sim.current = createSim(r, prepareFeatures(r, quality));
         window.__ride = sim.current; // debug and end-to-end test hook
         setResort(r);
       })
       .catch((e) => setError(e.message));
-  }, []);
+  }, [quality]);
 
   useEffect(() => attachKeyboard(), []);
 

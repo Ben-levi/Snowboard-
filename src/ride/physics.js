@@ -2,7 +2,10 @@
 // Frame: x east, y up, z south (metres). The board points along `heading`: forward = (sin h, 0, cos h).
 // Turning right (rider's view) lowers the heading; edge > 0 is the right-hand edge.
 
+import { closestOnRing, pointInRing } from './obstacles.js';
+
 export const STEP = 1 / 120;
+const wall = [0, 0];
 
 export const PARAMS = {
   g: 9.81,
@@ -108,15 +111,33 @@ function collide(s, world, P, events) {
   const obstacles = world.obstaclesNear?.(s.x, s.z);
   if (obstacles) {
     for (const o of obstacles) {
-      const dx = s.x - o.x;
-      const dz = s.z - o.z;
-      const d = Math.hypot(dx, dz);
-      const min = o.r + P.radius;
-      if (d >= min || d < 1e-6) continue;
-      const nx = dx / d;
-      const nz = dz / d;
-      s.x = o.x + nx * min;
-      s.z = o.z + nz * min;
+      let nx;
+      let nz;
+      if (o.ring) {
+        // Building footprint: push out to the nearest wall.
+        if (s.x < o.minX - P.radius || s.x > o.maxX + P.radius || s.z < o.minZ - P.radius || s.z > o.maxZ + P.radius) continue;
+        const [cx, cz] = closestOnRing(s.x, s.z, o.ring, wall);
+        const inside = pointInRing(s.x, s.z, o.ring);
+        const dx = s.x - cx;
+        const dz = s.z - cz;
+        const d = Math.hypot(dx, dz);
+        if (!inside && d >= P.radius) continue;
+        if (d < 1e-6) continue;
+        nx = (inside ? -dx : dx) / d;
+        nz = (inside ? -dz : dz) / d;
+        s.x = cx + nx * P.radius;
+        s.z = cz + nz * P.radius;
+      } else {
+        const dx = s.x - o.x;
+        const dz = s.z - o.z;
+        const d = Math.hypot(dx, dz);
+        const min = o.r + P.radius;
+        if (d >= min || d < 1e-6) continue;
+        nx = dx / d;
+        nz = dz / d;
+        s.x = o.x + nx * min;
+        s.z = o.z + nz * min;
+      }
       const vin = s.vx * nx + s.vz * nz;
       if (vin < 0) {
         if (-vin > P.impact && !s.crashed) crash(s, events);

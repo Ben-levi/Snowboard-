@@ -182,11 +182,13 @@ function simplify(pts, tol) {
     const [bx, bz] = pts[b];
     const dx = bx - ax;
     const dz = bz - az;
-    const len = Math.hypot(dx, dz) || 1;
+    const len = Math.hypot(dx, dz);
     let best = -1;
     let bestD = tol;
     for (let i = a + 1; i < b; i++) {
-      const d = Math.abs((pts[i][0] - ax) * dz - (pts[i][1] - az) * dx) / len;
+      // Closed rings start and end on the same point: measure from that point instead.
+      const d =
+        len < 1e-9 ? Math.hypot(pts[i][0] - ax, pts[i][1] - az) : Math.abs((pts[i][0] - ax) * dz - (pts[i][1] - az) * dx) / len;
       if (d > bestD) {
         bestD = d;
         best = i;

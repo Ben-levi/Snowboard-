@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRider, findSpawn, PARAMS, step, STEP } from './physics.js';
 import { makeHeightfield } from './terrainData.js';
+import { createObstacleIndex, pointInRing } from './obstacles.js';
 
 // Analytic worlds: height(x, z) with numeric normals.
 function world(height, extra = {}) {
@@ -120,6 +121,18 @@ describe('snowboard physics', () => {
     const events = run(s, w, idle, 2);
     expect(events.some((e) => e.crashed)).toBe(true);
     expect(Math.hypot(s.x - tree.x, s.z - tree.z)).toBeGreaterThanOrEqual(tree.r + PARAMS.radius - 1e-6);
+  });
+
+  it('bounces off building walls and never ends up inside', () => {
+    const index = createObstacleIndex();
+    index.add({ ring: [[-5, 10], [5, 10], [5, 20], [-5, 20], [-5, 10]] });
+    const w = { ...flat, obstaclesNear: index.near };
+    const s = createRider(w, 1, 0, 0);
+    s.vz = 6;
+    const events = run(s, w, idle, 3);
+    expect(events.some((e) => e.bumped)).toBe(true);
+    expect(pointInRing(s.x, s.z, [[-5, 10], [5, 10], [5, 20], [-5, 20]])).toBe(false);
+    expect(s.z).toBeLessThan(10);
   });
 
   it('keeps the rider inside the map', () => {

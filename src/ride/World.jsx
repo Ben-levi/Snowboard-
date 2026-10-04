@@ -7,6 +7,7 @@ import { readInput, takePressed } from './input.js';
 import { createTerrainMaterial } from './terrainMaterial.js';
 import { FarTerrain, NearTerrain } from './Terrain.jsx';
 import Rider from './Rider.jsx';
+import { Lifts, PisteMarkers, Trees, Village } from './Scenery.jsx';
 
 // Late-morning sun from the south-east (the resort's main slopes face north and east).
 export const SUN_DIR = new THREE.Vector3(0.45, 0.62, 0.64).normalize();
@@ -101,6 +102,13 @@ export default function World({ resort, sim, quality, onEvents, children }) {
   }, []);
   useEffect(() => () => (material.dispose(), farMaterial.dispose()), [material, farMaterial]);
   sim.current.terrainMaterial = material;
+  const features = sim.current.features;
+  useEffect(() => {
+    const u = material.userData.uniforms;
+    u.uMask.value = features.mask.texture;
+    u.uMaskBounds.value.set(...features.mask.bounds);
+    u.uHasMask.value = 1;
+  }, [material, features]);
 
   return (
     <>
@@ -114,6 +122,10 @@ export default function World({ resort, sim, quality, onEvents, children }) {
       <Suspense fallback={null}>
         <Rider sim={sim} world={resort.near} />
       </Suspense>
+      <Village buildings={features.buildings} />
+      <Lifts lifts={features.lifts} quality={quality} />
+      <Trees trees={features.trees} quality={quality} />
+      <PisteMarkers markers={features.markers} />
       {children}
     </>
   );
