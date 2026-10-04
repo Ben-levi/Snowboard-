@@ -6,7 +6,7 @@
 //   features.json  pistes, lifts, forests, buildings, roads, peaks from OpenStreetMap (local metres)
 //
 // Elevation: AWS Terrain Tiles (Terrarium PNG). OSM: Overpass API.
-// Usage: node tools/resort/bake.mjs pas-de-la-casa [--skip-osm] [--skip-terrain]
+// Usage: node tools/resort/bake.mjs pas-de-la-casa [--skip-osm] [--skip-terrain] [--require-osm]
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -158,7 +158,18 @@ async function bakeTerrain() {
 }
 
 // ---------- OpenStreetMap ----------
-const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const OVERPASS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+];
+// Overpass rejects anonymous clients (406), so say who we are.
+const HEADERS = {
+  'User-Agent': 'SnowCrewResortBake/1.0 (+https://github.com/Ben-levi/Snowboard-)',
+  Accept: 'application/json',
+  'Content-Type': 'application/x-www-form-urlencoded',
+};
 
 function simplify(pts, tol) {
   if (pts.length < 3) return pts;
@@ -213,14 +224,18 @@ out geom tags;`;
   for (const url of OVERPASS) {
     try {
       console.log(`Overpass: ${url}`);
-      const res = await fetchRetry(url, { method: 'POST', body: new URLSearchParams({ data: query }) }, 3);
+      const res = await fetchRetry(url, { method: 'POST', headers: HEADERS, body: new URLSearchParams({ data: query }).toString() }, 3);
       data = await res.json();
       break;
     } catch (e) {
       console.warn(`  failed: ${e.message}`);
     }
   }
-  if (!data) throw new Error('All Overpass endpoints failed');
+  if (!data) {
+    if (flag('--require-osm')) throw new Error('All Overpass endpoints failed');
+    console.warn('All Overpass endpoints failed: keeping the terrain only.');
+    return;
+  }
 
   const local = (geom) => geom.filter(Boolean).map((p) => proj.toLocal(p.lon, p.lat).map((v) => Math.round(v * 10) / 10));
   const line = (geom, tol = 1.5) => simplify(local(geom), tol);

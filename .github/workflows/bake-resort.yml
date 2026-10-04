@@ -23,7 +23,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: node tools/resort/bake.mjs "${{ inputs.resort }}"
+      - run: node tools/resort/bake.mjs "${{ inputs.resort }}" --require-osm
       - name: Commit baked files
         run: |
           git config user.name "github-actions[bot]"
