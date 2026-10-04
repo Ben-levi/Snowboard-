@@ -46,6 +46,10 @@ function Simulation({ sim, world, onEvents }) {
       }
     }
     const s = sim.current.rider;
+    if (sim.current.snapCamera) {
+      first.current = true;
+      sim.current.snapCamera = false;
+    }
 
     // Chase camera: behind the direction of travel, a little above, looking ahead.
     const hv = Math.hypot(s.vx, s.vz);
@@ -61,6 +65,8 @@ function Simulation({ sim, world, onEvents }) {
     if (want.y < ground) want.y = ground;
     if (first.current) camera.position.copy(want);
     else camera.position.lerp(want, firstPerson ? 1 : 1 - Math.exp(-dt * 6));
+    const under = world.heightAt(camera.position.x, camera.position.z) + 1;
+    if (camera.position.y < under) camera.position.y = under;
     look.set(s.x + camDir.x * 4, s.y + (firstPerson ? 1.2 : 1.0), s.z + camDir.z * 4);
     if (first.current) lookSmooth.copy(look);
     else lookSmooth.lerp(look, 1 - Math.exp(-dt * 10));

@@ -36,6 +36,7 @@ function createSim(resort, features) {
     paused: true,
     reset(point = sim.spawn) {
       sim.rider = createRider(world, point.x, point.z, point.heading ?? 0);
+      sim.snapCamera = true;
     },
   };
   return sim;
