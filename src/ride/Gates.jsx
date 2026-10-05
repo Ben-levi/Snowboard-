@@ -7,8 +7,8 @@ const HALF = 10; // m from the gate centre to each pole
 // Flags for the active timed run: the next gate glows orange, passed gates disappear.
 export default function Gates({ sim, course, heightAt }) {
   const parts = useMemo(() => {
-    const pole = new THREE.CylinderGeometry(0.06, 0.06, 3, 6).translate(0, 1.5, 0);
-    const flag = new THREE.PlaneGeometry(1.4, 0.9).translate(0.7, 2.5, 0);
+    const pole = new THREE.CylinderGeometry(0.06, 0.06, 4.8, 6).translate(0, 2.4, 0);
+    const flag = new THREE.PlaneGeometry(1.4, 0.9).translate(0.7, 2.4, 0);
     const banner = new THREE.BoxGeometry(1, 1.1, 0.08);
     const mats = {
       next: new THREE.MeshStandardMaterial({ color: '#ff7a1a', emissive: '#ff7a1a', emissiveIntensity: 0.6, side: THREE.DoubleSide }),
@@ -37,7 +37,7 @@ export default function Gates({ sim, course, heightAt }) {
         pole.position.set(x, y - 0.1, z);
         const flag = new THREE.Mesh(parts.flag, parts.mats.later);
         flag.position.copy(pole.position);
-        flag.rotation.y = Math.atan2(g.dirX, g.dirZ) + Math.PI / 2;
+        flag.rotation.y = Math.atan2(g.dirX, g.dirZ); // faces riders coming down the run
         pole.castShadow = flag.castShadow = true;
         gate.add(pole, flag);
         flags.push(flag);
@@ -45,9 +45,9 @@ export default function Gates({ sim, course, heightAt }) {
       if (k === 0 || k === last) {
         const banner = new THREE.Mesh(parts.banner, k === 0 ? parts.mats.start : parts.mats.finish);
         const y = Math.max(heightAt(g.x + px * HALF, g.z + pz * HALF), heightAt(g.x - px * HALF, g.z - pz * HALF));
-        banner.position.set(g.x, y + 3.1, g.z);
+        banner.position.set(g.x, y + 4.2, g.z);
         banner.scale.set(HALF * 2, 1, 1);
-        banner.rotation.y = Math.atan2(g.dirX, g.dirZ) + Math.PI / 2;
+        banner.rotation.y = Math.atan2(g.dirX, g.dirZ); // spans the run (local x across it)
         gate.add(banner);
       }
       gate.userData = { k, flags };

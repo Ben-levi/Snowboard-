@@ -126,3 +126,66 @@ html, body, #root { margin: 0; height: 100%; background: #0b1016; overflow: hidd
   .hud-run b { font-size: 1.5rem; }
   .ride-toast { font-size: 1.25rem; white-space: nowrap; }
 }
+
+/* ---------- v2: medals, ghost, finish, settings, hold-sides touch ---------- */
+.menu-stars { font-weight: 800; color: #ffd43b; margin-inline-start: auto; }
+.menu-head { flex-wrap: wrap; }
+.menu-blurb { color: var(--muted); font-size: 0.75rem; white-space: normal; line-height: 1.35; margin-top: 2px; }
+.menu-list button.locked { opacity: 0.55; cursor: not-allowed; }
+.menu-list button:disabled:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.06); }
+.menu-side { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.menu-medal { font-size: 1.3rem; line-height: 1; }
+
+.hud-split { font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums; animation: pop 0.25s ease-out; }
+.hud-split.ahead { color: #51cf66; }
+.hud-split.behind { color: #ff6b6b; }
+.hud-ghost { font-size: 0.75rem; color: var(--muted); }
+
+.finish-card { text-align: center; }
+.finish-medal { position: relative; width: 96px; height: 118px; margin: 0 auto 4px; animation: medal 0.7s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes medal { from { transform: scale(0.2) rotate(-25deg); } }
+.medal-ribbon {
+  position: absolute; left: 50%; top: 0; width: 46px; height: 46px; transform: translateX(-50%);
+  background: linear-gradient(90deg, #1c7ed6 0 33%, #f8f9fa 33% 66%, #e03131 66%); clip-path: polygon(0 0, 100% 0, 75% 100%, 25% 100%);
+}
+.medal-disc {
+  position: absolute; left: 50%; bottom: 0; width: 84px; height: 84px; transform: translateX(-50%); border-radius: 50%;
+  display: grid; place-items: center; font-size: 2.2rem; font-weight: 800; color: rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.18), inset 0 6px 0 rgba(255, 255, 255, 0.35), 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.finish-medal.gold .medal-disc { background: radial-gradient(circle at 35% 30%, #fff3bf, #fcc419 45%, #e67700); }
+.finish-medal.silver .medal-disc { background: radial-gradient(circle at 35% 30%, #ffffff, #ced4da 45%, #868e96); }
+.finish-medal.bronze .medal-disc { background: radial-gradient(circle at 35% 30%, #ffe8cc, #e8590c 50%, #a63b06); }
+.finish-medal.none .medal-ribbon { display: none; }
+.finish-medal.none .medal-disc { background: rgba(255, 255, 255, 0.08); font-size: 2.6rem; }
+.finish-time { font-size: 2.6rem; font-weight: 800; font-variant-numeric: tabular-nums; margin: 4px 0; }
+.finish-line { margin: 0 0 6px; font-weight: 700; }
+.finish-delta { margin: 0 0 6px; font-weight: 800; }
+.finish-delta.ahead { color: #51cf66; }
+.finish-delta.behind { color: #ff6b6b; }
+.finish-stars { margin: 4px 0; color: #ffd43b; font-weight: 800; }
+.finish-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+.finish-stats > div { background: rgba(255, 255, 255, 0.06); border-radius: 12px; padding: 8px 4px; }
+.finish-stats dt { font-size: 0.72rem; color: var(--muted); }
+.finish-stats dd { margin: 2px 0 0; font-weight: 800; }
+.finish-targets { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
+.finish-targets .on { color: var(--ink); font-weight: 800; }
+.finish-actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+
+.settings-card { text-align: start; }
+.settings-row { display: flex; gap: 12px; align-items: flex-start; margin: 14px 0; cursor: pointer; }
+.settings-row input { width: 22px; height: 22px; accent-color: var(--brand); margin-top: 2px; }
+.settings-row span { display: flex; flex-direction: column; }
+.settings-row small { color: var(--muted); }
+.settings-full { width: 100%; }
+
+.touch-sides { position: absolute; inset: 0; pointer-events: auto; touch-action: none; -webkit-touch-callout: none; }
+.touch-glow { position: absolute; top: 0; bottom: 0; width: 22%; opacity: 0; transition: opacity 0.12s; pointer-events: none; }
+.touch-glow.left { left: 0; background: linear-gradient(to right, rgba(255, 122, 26, 0.28), transparent); }
+.touch-glow.right { right: 0; background: linear-gradient(to left, rgba(255, 122, 26, 0.28), transparent); }
+.touch-glow.on { opacity: 1; }
+.touch-sides .touch-hint { left: 50%; transform: translateX(-50%); text-align: center; max-width: 86%; }
+.ride, .ride * { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.ride input { -webkit-user-select: auto; user-select: auto; }
+.hud-buttons, .hud-menu { z-index: 3; position: relative; }
+.hud-buttons { position: absolute; }

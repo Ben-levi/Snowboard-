@@ -135,6 +135,36 @@ describe('snowboard physics', () => {
     expect(s.z).toBeLessThan(10);
   });
 
+  it('steers relative to the direction of travel, also riding switch', () => {
+    const P = { ...PARAMS, muOff: 0, drag: 0 };
+    const s = createRider(flat, 0, 0, Math.PI / 2 + Math.PI); // board points west...
+    s.vx = 8; // ...but we travel east, tail first
+    run(s, flat, { ...idle, steer: 1 }, 1, P);
+    // Turning right while travelling east means heading south-east: vz grows positive.
+    expect(s.vz).toBeGreaterThan(1);
+  });
+
+  it('assist lines the board up with the travel and flattens it on release', () => {
+    const w = slope(15);
+    const plain = createRider(w, 0, 0, 0.6); // board 34° off the fall line
+    const helped = createRider(w, 0, 0, 0.6);
+    plain.vz = helped.vz = 8;
+    run(plain, w, idle, 1.5);
+    run(helped, w, { ...idle, assist: 1 }, 1.5);
+    const off = (r) => Math.abs(Math.atan2(Math.sin(Math.atan2(r.vx, r.vz) - r.heading), Math.cos(Math.atan2(r.vx, r.vz) - r.heading)));
+    expect(off(helped)).toBeLessThan(off(plain) * 0.5);
+    expect(helped.speed).toBeGreaterThan(plain.speed); // less skid, less speed lost
+    // Edge comes back faster after a turn.
+    const a = createRider(w, 0, 0, 0);
+    const b = createRider(w, 0, 0, 0);
+    a.vz = b.vz = 10;
+    run(a, w, { ...idle, steer: 1 }, 0.6);
+    run(b, w, { ...idle, steer: 1, assist: 1 }, 0.6);
+    run(a, w, idle, 0.12);
+    run(b, w, { ...idle, assist: 1 }, 0.12);
+    expect(Math.abs(b.edge)).toBeLessThan(Math.abs(a.edge));
+  });
+
   it('keeps the rider inside the map', () => {
     const w = { ...slope(25), x0: -100, z0: -100, width: 200, depth: 200 };
     const s = createRider(w, 0, 0, 0);

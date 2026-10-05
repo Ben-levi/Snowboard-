@@ -70,14 +70,36 @@ src/components/…            HomeView, GearView, GearSection, ShoppingList, Cre
 
 `ride.html` (live at `…/Snowboard-/ride.html`) is a 3D snowboard simulation on the **real terrain of Pas de la Casa** (Grandvalira, Andorra). It's a separate page that shares only the rider model with the gear app.
 
-- **Free ride** from the top of any of the resort's real lifts, or **timed runs** down 46 named pistes. A run has gates every 150 m, a +5 s penalty for each missed gate, and best times saved in the browser.
-- **Desktop controls:** keyboard (A/D or ←/→ to edge and turn, W to tuck or skate, S to brake, hold and release Space to ollie, R to restart, C to switch camera, M or Esc for the menu) or a gamepad.
-- **Phone controls:** a thumb stick, jump and brake buttons, and optional tilt steering. Graphics quality drops automatically on phones (`?q=low|medium|high` overrides it).
+- **The popular runs only**, curated from riders' guides (`src/ride/runs.js`):
+  - **Green:** Pista Escola
+  - **Blue:** Isards, Tubs, Camí de Pessons, Pastora
+  - **Red:** Pista Llarga, Directa I, Montmalús, Moreto
+  - **Black:** Mirador, Jordi Angles, Granota
+  - **Boardercross:** the Boardercross Tubs course
+  - Every other OSM piste stays as background groomed snow.
+- **Made like the real thing** (`src/ride/grooming.js`, `PisteFurniture.jsx`, `Npcs.jsx`):
+  - **Groomed and graded runs:** small bumps are smoothed out and the cross-slope is graded (cat-tracks like Pastora are cut level into the hillside). The boardercross gets rollers and banked berms.
+  - **Piste furniture:** orange safety nets where the snow drops away, padded lift towers, start signs and snow guns.
+  - **Other riders:** bot-driven riders out on the runs.
+- **Medals and ghost:**
+  - **Target times:** a bot rides each run with the real physics. Its time is gold; silver is +12% and bronze +30%.
+  - **Stars and unlocks:** medals give 1–3 stars. Reds unlock at 3 stars, blacks at 9 and the boardercross at 5.
+  - **Ghost:** your best run is saved as a ghost (the gold bot run until you have one), with split times at every gate.
+  - **Finish screen:** time, medal, stats, retry and next run.
+- **Controls:**
+  - **Desktop:** A/D or ←/→ to turn, W to tuck, S to brake, hold and release Space to ollie, R to restart, C to switch camera, M or Esc for the menu. A gamepad works too.
+  - **Phone (default):** hold the left or right side of the screen to turn, swipe up to jump, swipe down to brake, two fingers to tuck. Tilt or a thumb stick can be picked in ⚙️ settings.
+  - **Smoothing:** steering eases in and out through a critically damped spring, and rendering interpolates between physics steps.
+  - **Camera:** rides on springs over smoothed ground.
+  - **Steering assist:** on by default on phones, and toggleable in settings.
 - **Physics** (`src/ride/physics.js`, unit tested):
-  - gravity along the slope, snow friction (lower on groomed pistes) and air drag
-  - carving on the board's sidecut, side-slipping on a flat base, skid braking
-  - ollies, take-offs over convex rolls, and landing checks
-  - collisions with trees, lift towers and buildings
+  - gravity along the slope, snow friction and air drag
+  - carving on the sidecut, and edge grip strong enough to hold a traverse
+  - side-slip, skid braking
+  - ollies, take-offs and landings
+  - collisions with trees, towers, nets and buildings
+  - steering is relative to the direction of travel, so riding switch still turns the way you press
+- `?autopilot=1` lets the bot ride timed runs for you (debugging), and `?q=low|medium|high` forces a graphics preset.
 
 ### The resort data
 

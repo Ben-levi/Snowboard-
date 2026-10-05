@@ -1,8 +1,9 @@
-// Graphics presets. Phones get a lighter scene; ?q=low|high overrides the guess.
+// Graphics presets. Phones get a lighter scene; ?q=low|medium|high overrides the guess.
+// logDepth: logarithmic depth buffer (no z-fighting far away, but slower fragment shading on phones).
 const PRESETS = {
-  high: { name: 'high', dpr: [1, 2], shadows: true, shadowSize: 2048, lodScale: 1, sparkle: 1, detail: 1, trees: 1 },
-  medium: { name: 'medium', dpr: [1, 1.5], shadows: true, shadowSize: 1024, lodScale: 0.75, sparkle: 0.8, detail: 0.8, trees: 0.6 },
-  low: { name: 'low', dpr: [1, 1], shadows: false, shadowSize: 512, lodScale: 0.5, sparkle: 0.5, detail: 0, trees: 0.35 },
+  high: { name: 'high', dpr: [1, 2], shadows: true, shadowSize: 2048, shadowBox: 40, lodScale: 1, sparkle: 1, detail: 1, trees: 1, npcs: 14, logDepth: true },
+  medium: { name: 'medium', dpr: [0.75, 1.5], shadows: true, shadowSize: 1024, shadowBox: 25, lodScale: 0.7, sparkle: 0.6, detail: 0, trees: 0.35, npcs: 7, logDepth: false },
+  low: { name: 'low', dpr: [0.6, 1], shadows: false, shadowSize: 512, shadowBox: 20, lodScale: 0.5, sparkle: 0.4, detail: 0, trees: 0.2, npcs: 4, logDepth: false },
 };
 
 export const QUALITY_ORDER = ['low', 'medium', 'high'];

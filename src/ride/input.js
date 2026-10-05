@@ -3,7 +3,7 @@
 
 const keys = new Set();
 const pressed = new Set(); // one-shot keys (reset, camera) since the last poll
-export const touch = { steer: 0, tuck: 0, brake: 0, jump: false, active: false };
+export const touch = { steer: 0, tuck: 0, brake: 0, jump: false, active: false, digital: true };
 
 const GAME_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'KeyA', 'KeyD', 'KeyW', 'KeyS', 'KeyR', 'KeyC']);
 
@@ -35,34 +35,58 @@ export function takePressed(code) {
 const deadzone = (v, d = 0.15) => (Math.abs(v) < d ? 0 : (v - Math.sign(v) * d) / (1 - d));
 
 let smoothSteer = 0;
+let steerVel = 0;
 
-// Called once per frame. Keyboard steering eases in so taps make small corrections.
+// One smoothing stage for every input. Digital sources (keys, holding a side of the screen) roll the
+// edge in over ~0.35 s and out over ~0.25 s through a critically damped spring, so turns start and
+// end smoothly; analog sources (stick, tilt, gamepad) are only lightly smoothed.
+export function smoothTowards(target, dt, digital) {
+  const releasing = Math.abs(target) < Math.abs(smoothSteer) - 1e-3;
+  const omega = digital ? (releasing ? 16 : 11) : 30;
+  // Semi-implicit critically damped spring, in small substeps so slow frames stay stable.
+  const n = Math.max(1, Math.ceil(dt / (1 / 240)));
+  const h = dt / n;
+  for (let i = 0; i < n; i++) {
+    steerVel += (-2 * omega * steerVel - omega * omega * (smoothSteer - target)) * h;
+    smoothSteer += steerVel * h;
+  }
+  if (Math.abs(smoothSteer) > 1) {
+    smoothSteer = Math.sign(smoothSteer);
+    steerVel = 0;
+  }
+  return smoothSteer;
+}
+
+// Called once per frame.
 export function readInput(dt) {
   const pad = navigator.getGamepads?.().find(Boolean);
   const left = keys.has('ArrowLeft') || keys.has('KeyA');
   const right = keys.has('ArrowRight') || keys.has('KeyD');
-  const keySteer = (right ? 1 : 0) - (left ? 1 : 0);
-  const k = 1 - Math.exp(-dt * (keySteer === 0 ? 10 : 5));
-  smoothSteer += (keySteer - smoothSteer) * k;
-
-  let steer = smoothSteer;
+  let target = (right ? 1 : 0) - (left ? 1 : 0);
+  let digital = true;
   let tuck = keys.has('ArrowUp') || keys.has('KeyW') ? 1 : 0;
   let brake = keys.has('ArrowDown') || keys.has('KeyS') ? 1 : 0;
   let jump = keys.has('Space');
 
   if (pad) {
     const sx = deadzone(pad.axes[0] ?? 0);
-    if (sx) steer = sx;
+    if (sx) {
+      target = sx;
+      digital = false;
+    }
     tuck = Math.max(tuck, pad.buttons[7]?.value ?? 0, -Math.min(0, deadzone(pad.axes[1] ?? 0)));
     brake = Math.max(brake, pad.buttons[6]?.value ?? 0, Math.max(0, deadzone(pad.axes[1] ?? 0)));
     jump = jump || Boolean(pad.buttons[0]?.pressed);
     if (pad.buttons[3]?.pressed) pressed.add('KeyR');
   }
   if (touch.active) {
-    if (touch.steer) steer = touch.steer;
+    if (touch.steer) {
+      target = touch.steer;
+      digital = touch.digital;
+    }
     tuck = Math.max(tuck, touch.tuck);
     brake = Math.max(brake, touch.brake);
     jump = jump || touch.jump;
   }
-  return { steer, tuck, brake, jump };
+  return { steer: smoothTowards(target, dt, digital), tuck, brake, jump };
 }

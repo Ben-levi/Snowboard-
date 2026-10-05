@@ -6,8 +6,8 @@ import Minimap from './Minimap.jsx';
 import { isMuted, setMuted } from './audio.js';
 
 // Speed, altitude, current piste, run timer and the minimap; refreshed ten times a second.
-export default function Hud({ sim, best, onMenu, compact }) {
-  const [view, setView] = useState({ speed: 0, alt: 0, piste: null, run: null });
+export default function Hud({ sim, target, ghost, onMenu, onSettings, compact }) {
+  const [view, setView] = useState({ speed: 0, alt: 0, piste: null, run: null, split: null });
   const [mute, setMute] = useState(isMuted);
   useEffect(() => {
     const id = setInterval(() => {
@@ -17,6 +17,8 @@ export default function Hud({ sim, best, onMenu, compact }) {
         alt: Math.round(rider.y),
         piste: features.pisteAt(rider.x, rider.z),
         run: run && { name: run.course.name, difficulty: run.course.difficulty, started: run.started, finished: run.finished, time: run.started ? run.time : 0, next: run.next, gates: run.course.gates.length },
+        // The latest gate split against the ghost, shown for 2.5 s.
+        split: sim.current.lastSplit && performance.now() - sim.current.lastSplit.at < 2500 ? sim.current.lastSplit.delta : null,
       });
     }, 100);
     return () => clearInterval(id);
@@ -49,14 +51,25 @@ export default function Hud({ sim, best, onMenu, compact }) {
           <b dir="ltr" data-hud="time">{formatTime(run.time)}</b>
           <span>
             {!run.started ? t.toStart : run.finished ? t.finish : t.gate(Math.max(0, run.next - 1), run.gates - 1)}
-            {best ? ` · ${t.best} ${formatTime(best)}` : ''}
+            {target ? ` · 🥇 ${formatTime(target.gold)}` : ''}
           </span>
+          {view.split !== null && (
+            <span className={`hud-split ${view.split <= 0 ? 'ahead' : 'behind'}`} data-hud="split" dir="ltr">
+              {t.vsGhost(view.split)}
+            </span>
+          )}
+          {ghost && !run.started && <span className="hud-ghost">👻 {ghost.mine ? t.ghostMine : t.ghostGold}</span>}
         </div>
       )}
       <div className="hud-buttons">
         <button className="hud-menu" onClick={onMenu} aria-label={t.menu}>
           ☰
         </button>
+        {onSettings && (
+          <button className="hud-menu" onClick={onSettings} aria-label={t.settings}>
+            ⚙️
+          </button>
+        )}
         <button
           className="hud-menu"
           aria-label={t.sound}

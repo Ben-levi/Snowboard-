@@ -194,12 +194,18 @@ export function step(s, input, world, dt = STEP, P = PARAMS) {
     projectOnPlane(s, n);
     const { f, r } = boardAxes(s.heading, n);
 
-    // Edge follows the stick.
-    const target = steer * P.maxEdge;
-    s.edge += clamp(target - s.edge, -P.edgeRate * dt, P.edgeRate * dt);
-
     let speed = Math.hypot(s.vx, s.vy, s.vz);
     const vf = s.vx * f[0] + s.vy * f[1] + s.vz * f[2];
+    const assist = clamp(input.assist ?? 0, 0, 1);
+
+    // Edge follows the stick. Steering is relative to the direction of travel: riding switch
+    // (tail first), the other edge turns the same way, so "right" always turns right.
+    const travelSign = vf < -0.5 ? -1 : 1;
+    let target = steer * P.maxEdge * travelSign;
+    // Assist: gentler edges at low speed, and the board flattens faster when the input is released.
+    if (assist) target *= Math.min(1, 0.45 + speed / 10);
+    const rate = assist && Math.abs(steer) < 0.05 ? P.edgeRate * (1 + assist) : P.edgeRate;
+    s.edge += clamp(target - s.edge, -rate * dt, rate * dt);
 
     // Carving: the edge bends the board into an arc; heading and velocity turn together (no speed lost).
     let kappa = Math.sin(Math.abs(s.edge)) / P.sidecut;
@@ -213,11 +219,23 @@ export function step(s, input, world, dt = STEP, P = PARAMS) {
     const pivotW = clamp(1 - speed / 4, 0, 1);
     s.heading -= steer * P.pivot * pivotW * dt;
 
+    // Assist: line the board up with the direction of travel (nose or tail first) so it doesn't
+    // drift into a skid by surprise. Not while braking: that's a deliberate skid.
+    if (assist && speed > 2.5 && brake < 0.1) {
+      const travel = Math.atan2(s.vx, s.vz);
+      let d = Math.atan2(Math.sin(travel - s.heading), Math.cos(travel - s.heading));
+      if (Math.abs(d) > Math.PI / 2) d = Math.atan2(Math.sin(d - Math.PI), Math.cos(d - Math.PI));
+      s.heading += d * Math.min(1, assist * 3 * dt);
+    }
+
     // Sideways slip relative to the (turned) board is braked: hard on an edge, gently on a flat base
     // (so a flat board side-slips down the fall line). Throwing the board sideways (brake) adds more.
     const axes = boardAxes(s.heading, n);
     const vl = s.vx * axes.r[0] + s.vy * axes.r[1] + s.vz * axes.r[2];
-    const edgeGrip = 0.25 + 0.75 * Math.min(1, Math.abs(s.edge) / P.maxEdge);
+    // A board holds an edge long before it carves tightly: full grip by ~20° of edge (a gentle 22 m arc),
+    // so you can hold a traverse across a steep slope.
+    const e = Math.min(1, Math.abs(s.edge) / 0.35);
+    const edgeGrip = 0.25 + 0.75 * e * e * (3 - 2 * e);
     const slipDecel = (P.skid * edgeGrip + P.brake * brake) * dt;
     const newVl = Math.sign(vl) * Math.max(0, Math.abs(vl) - slipDecel);
     s.vx += (newVl - vl) * axes.r[0];

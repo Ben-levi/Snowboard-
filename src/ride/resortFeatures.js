@@ -1,7 +1,9 @@
 import * as THREE from 'three';
 import { createObstacleIndex, pointInRing } from './obstacles.js';
 import { layoutLift } from './lifts.js';
-import { buildCourses } from './courses.js';
+import { buildCourses, gatesAlong } from './courses.js';
+import { curateCourses } from './runs.js';
+import { groom, shapeBoardercross } from './grooming.js';
 
 // European piste colours (Grandvalira uses green, blue, red and black).
 export const DIFFICULTY_COLORS = {
@@ -124,6 +126,23 @@ export function prepareFeatures(resort, quality) {
     return occData[(j * occ.width + i) * 4] > 0;
   };
 
+  // ---- The popular runs: curated courses, groomed snow, a shaped boardercross ----
+  const courses = curateCourses(
+    buildCourses(
+      f.pistes.filter((p) => p.line.every(([x, z]) => near.inside(x, z, 40))),
+      near.heightAt,
+    ),
+  );
+  const groomed = groom(
+    near,
+    courses.filter((c) => !c.boardercross).map((c) => ({ line: c.line, width: c.width, difficulty: c.difficulty })),
+  );
+  for (const c of courses) {
+    if (!c.boardercross) continue;
+    c.line = shapeBoardercross(near, c.line, { width: c.width });
+    c.gates = gatesAlong(c.line, 70);
+  }
+
   // ---- Buildings ----
   const buildings = [];
   for (const b of f.buildings) {
@@ -166,6 +185,9 @@ export function prepareFeatures(resort, quality) {
       near.normalAt(jx, jz, n);
       if (n[1] < 0.82) continue; // too steep (~35°)
       if (maskAt(jx, jz, 0) > 20 || maskAt(jx, jz, 2) > 20 || occupied(jx, jz)) continue;
+      const gi = Math.round((jx - near.x0) / near.cell);
+      const gj = Math.round((jz - near.z0) / near.cell);
+      if (groomed[gj * (near.cols + 1) + gi] > 0.02) continue; // inside a popular run's corridor
       const s = 0.75 + rand() * 0.6;
       trees.push({ x: jx, y, z: jz, s, rot: rand() * Math.PI * 2 });
       obstacles.add({ x: jx, z: jz, r: 0.35 * s });
@@ -180,11 +202,12 @@ export function prepareFeatures(resort, quality) {
     ctx.fill();
   }
 
-  // ---- Piste markers: poles along both edges, every ~45 m ----
+  // ---- Piste markers on the popular runs: poles along both edges, every ~45 m ----
   const markers = [];
-  for (const p of f.pistes) {
-    const color = DIFFICULTY_COLORS[p.difficulty] ?? DIFFICULTY_COLORS[''];
+  for (const p of courses) {
+    const color = p.boardercross ? '#ff7a1a' : DIFFICULTY_COLORS[p.difficulty] ?? DIFFICULTY_COLORS[''];
     const pts = p.line;
+    const half = p.width / 2 + 1;
     let carry = 0;
     for (let i = 1; i < pts.length; i++) {
       const [ax, az] = pts[i - 1];
@@ -194,18 +217,18 @@ export function prepareFeatures(resort, quality) {
       const ux = (bx - ax) / len;
       const uz = (bz - az) / len;
       let d = carry;
-      for (; d < len; d += 45) {
+      const every = p.boardercross ? 12 : 45;
+      for (; d < len; d += every) {
         const cx = ax + ux * d;
         const cz = az + uz * d;
         for (const side of [-1, 1]) {
-          const mx = cx - uz * 15 * side;
-          const mz = cz + ux * 15 * side;
-          // Skip poles that would stand inside a wider piste area.
-          if (maskAt(mx - uz * 6 * side, mz + ux * 6 * side, 0) > 200) continue;
+          const mx = cx - uz * half * side;
+          const mz = cz + ux * half * side;
           markers.push({ x: mx, y: near.heightAt(mx, mz), z: mz, color });
         }
       }
       carry = d - len;
+      if (p.boardercross) carry = Math.min(carry, 12);
     }
   }
 
@@ -270,38 +293,24 @@ export function prepareFeatures(resort, quality) {
     return best;
   }
 
-  // ---- Where to start: the top of each lift, facing the best way down ----
-  const starts = lifts
-    .filter((l) => l.kind !== 'carpet' && l.length > 200)
-    .map((l) => {
-      const top = l.towers.at(-1);
-      const inbound = [top.dirX, top.dirZ];
-      let best = null;
-      for (let k = 0; k < 16; k++) {
-        const a = (k / 16) * Math.PI * 2;
-        const dx = Math.sin(a);
-        const dz = Math.cos(a);
-        if (dx * -inbound[0] + dz * -inbound[1] > 0.6) continue; // not back down the lift line
-        const drop = top.y0 - near.heightAt(top.x + dx * 40, top.z + dz * 40);
-        if (!best || drop > best.drop) best = { drop, dx, dz };
-      }
-      const r = l.kind === 'drag' ? 6 : 12;
-      return {
-        id: l.id,
-        name: l.name || l.type,
-        kind: l.kind,
-        x: top.x + best.dx * r,
-        z: top.z + best.dz * r,
-        y: top.y0,
-        heading: Math.atan2(best.dx, best.dz),
-      };
-    })
-    .sort((a, b) => b.y - a.y);
+  // ---- Where to start: the top of each popular run (reached by its lift), facing down the run ----
+  const starts = courses.map((c) => {
+    const g = c.gates[0];
+    // Face along the run: many start with a traverse away from the lift, across the fall line.
+    return {
+      id: c.id,
+      name: c.name,
+      lift: c.lift,
+      difficulty: c.difficulty,
+      course: c,
+      x: g.x,
+      z: g.z,
+      y: near.heightAt(g.x, g.z),
+      heading: Math.atan2(g.dirX, g.dirZ),
+    };
+  });
 
-  const courses = buildCourses(
-    f.pistes.filter((p) => p.line.every(([x, z]) => near.inside(x, z, 40))),
-    near.heightAt,
-  );
+  const furniture = placeFurniture(near, courses, lifts, obstacles);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.flipY = false;
@@ -318,6 +327,7 @@ export function prepareFeatures(resort, quality) {
     lifts,
     trees,
     markers,
+    furniture,
     pisteAt,
     starts,
     courses,
@@ -325,4 +335,86 @@ export function prepareFeatures(resort, quality) {
     pisteAreas: f.pisteAreas,
     peaks: f.peaks,
   };
+}
+
+// Things seen on Grandvalira's pistes in photos and videos: orange safety nets where the snow falls
+// away beside the run, padded lift towers on the run, name signs at the top, and snow guns.
+function placeFurniture(near, courses, lifts, obstacles) {
+  const nets = [];
+  const pads = [];
+  const signs = [];
+  const guns = [];
+  const STEP = 12;
+  for (const c of courses) {
+    const half = c.width / 2;
+    let along = 0;
+    let gunSide = 1;
+    for (let s = 1; s < c.line.length; s++) {
+      const [ax, az] = c.line[s - 1];
+      const [bx, bz] = c.line[s];
+      const len = Math.hypot(bx - ax, bz - az);
+      if (len < 1e-3) continue;
+      const ux = (bx - ax) / len;
+      const uz = (bz - az) / len;
+      const rx = -uz; // right of travel
+      const rz = ux;
+      for (let d = (STEP - (along % STEP)) % STEP; d < len; d += STEP) {
+        const cx = ax + ux * d;
+        const cz = az + uz * d;
+        const at = along + d;
+        if (!c.boardercross && at > 30 && at < c.length - 30) {
+          for (const side of [-1, 1]) {
+            const ex = cx + rx * side * (half + 1.5);
+            const ez = cz + rz * side * (half + 1.5);
+            const fall = near.heightAt(ex, ez) - near.heightAt(ex + rx * side * 10, ez + rz * side * 10);
+            if (fall < 3.5) continue; // the snow beside the run doesn't drop away here
+            nets.push({ x: ex, y: near.heightAt(ex, ez), z: ez, yaw: Math.atan2(ux, uz), len: STEP + 0.5 });
+            const hx = ux * 6.2;
+            const hz = uz * 6.2;
+            const tx = rx * 0.2;
+            const tz = rz * 0.2;
+            obstacles.add({ ring: [[ex - hx - tx, ez - hz - tz], [ex + hx - tx, ez + hz - tz], [ex + hx + tx, ez + hz + tz], [ex - hx + tx, ez - hz + tz], [ex - hx - tx, ez - hz - tz]] });
+          }
+        }
+        const gunEvery = 108;
+        if ((c.difficulty === 'easy' || c.difficulty === 'intermediate') && at % gunEvery < STEP && at > 40) {
+          gunSide = -gunSide;
+          const gx = cx + rx * gunSide * (half + 3);
+          const gz = cz + rz * gunSide * (half + 3);
+          guns.push({ x: gx, y: near.heightAt(gx, gz), z: gz, yaw: Math.atan2(-rx * gunSide, -rz * gunSide) });
+          obstacles.add({ x: gx, z: gz, r: 0.6 });
+        }
+      }
+      along += len;
+    }
+    // Start sign on the right of the start gate, facing riders arriving from above.
+    const g = c.gates[0];
+    const sx = g.x - g.dirZ * (half + 2);
+    const sz = g.z + g.dirX * (half + 2);
+    signs.push({ x: sx, y: near.heightAt(sx, sz), z: sz, yaw: Math.atan2(-g.dirX, -g.dirZ), name: c.name, difficulty: c.difficulty, boardercross: Boolean(c.boardercross) });
+  }
+  // Pad the lift towers that stand on or right beside a popular run.
+  for (const l of lifts) {
+    if (l.kind === 'carpet') continue;
+    for (const t of l.towers) {
+      if (t.end) continue;
+      const onRun = courses.some((c) => distanceToLine(t.x, t.z, c.line) < c.width / 2 + 5);
+      if (onRun) pads.push({ x: t.x, y: t.y0, z: t.z });
+    }
+  }
+  return { nets, pads, signs, guns };
+}
+
+function distanceToLine(x, z, line) {
+  let best = Infinity;
+  for (let s = 1; s < line.length; s++) {
+    const [ax, az] = line[s - 1];
+    const [bx, bz] = line[s];
+    const dx = bx - ax;
+    const dz = bz - az;
+    const l2 = dx * dx + dz * dz || 1;
+    const t = Math.min(1, Math.max(0, ((x - ax) * dx + (z - az) * dz) / l2));
+    best = Math.min(best, Math.hypot(x - (ax + t * dx), z - (az + t * dz)));
+  }
+  return best;
 }

@@ -35,19 +35,20 @@ export default function Rider({ sim, world }) {
 
   useFrame((_, dt) => {
     const s = sim.current.rider;
+    const pose = sim.current.pose ?? s;
     const g = group.current;
     if (!g) return;
     // Board follows the snow (smoothed); in the air it drifts back to upright.
     if (s.airborne) target.set(0, 1, 0);
-    else target.fromArray(world.normalAt(s.x, s.z, normal));
+    else target.fromArray(world.normalAt(pose.x, pose.z, normal));
     up.current.lerp(target, 1 - Math.exp(-dt * (s.airborne ? 3 : 14))).normalize();
     Y.copy(up.current);
-    X.set(Math.sin(s.heading), 0, Math.cos(s.heading));
+    X.set(Math.sin(pose.heading), 0, Math.cos(pose.heading));
     X.addScaledVector(Y, -X.dot(Y)).normalize();
     Z.crossVectors(X, Y);
     basis.makeBasis(X, Y, Z);
     g.quaternion.setFromRotationMatrix(basis);
-    g.position.set(s.x, s.y, s.z);
+    g.position.set(pose.x, pose.y, pose.z);
 
     // Lean into the edge; crouch to load an ollie or tuck; topple over on a crash.
     const crashLean = s.crashed > 0 ? Math.min(1.35, (2 - s.crashed) * 4) : 0;

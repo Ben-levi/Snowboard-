@@ -50,7 +50,10 @@ export function buildCourses(pistes, heightAt, { minLength = 300, minDrop = 25, 
       const l = len(chain);
       if (!best || l > best.length) best = { line: chain, length: l, parts };
     }
-    if (!best || best.length < minLength) continue;
+    if (!best) continue;
+    best.line = trimClimbs(best.line, heightAt);
+    best.length = len(best.line);
+    if (best.length < minLength) continue;
     if (heightAt(...best.line[0]) - heightAt(...best.line.at(-1)) < minDrop) continue;
     const difficulty = best.parts.map((p) => p.difficulty).find(Boolean) ?? '';
     const top = heightAt(...best.line[0]);
@@ -69,6 +72,19 @@ export function buildCourses(pistes, heightAt, { minLength = 300, minDrop = 25, 
     (a, b) => DIFFICULTY_ORDER.indexOf(a.difficulty) - DIFFICULTY_ORDER.indexOf(b.difficulty) || a.name.localeCompare(b.name),
   );
   return courses;
+}
+
+// The terrain is coarser than the map, so a mapped piste can start a little below its real top or end
+// past its lowest point. Start at the highest point of the first third and finish at the lowest point
+// of the last third, so a run never begins or ends climbing.
+export function trimClimbs(line, heightAt) {
+  if (line.length < 4) return line;
+  const third = Math.max(1, Math.floor(line.length / 3));
+  let top = 0;
+  for (let i = 1; i <= third; i++) if (heightAt(...line[i]) > heightAt(...line[top])) top = i;
+  let bottom = line.length - 1;
+  for (let i = line.length - 1 - third; i < line.length - 1; i++) if (heightAt(...line[i]) < heightAt(...line[bottom])) bottom = i;
+  return bottom - top >= 1 ? line.slice(top, bottom + 1) : line;
 }
 
 // Gate points along a line: start at 0, then every GATE_SPACING, finish at the end.
@@ -105,7 +121,10 @@ export function updateRun(run, x, z, t, speed = Infinity) {
   const gates = run.course.gates;
   const near = (g) => Math.hypot(x - g.x, z - g.z) < GATE_RADIUS;
   if (!run.started) {
-    if (near(gates[0]) && speed > 1.5) {
+    // Start on setting off inside the start gate, or on leaving it however slowly.
+    const inStart = near(gates[0]);
+    if (inStart) run.armed = true;
+    if ((inStart && speed > 1.5) || (!inStart && run.armed)) {
       run.started = true;
       run.startTime = t;
       run.next = 1;
