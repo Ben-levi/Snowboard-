@@ -176,8 +176,9 @@ export function Trail({ sim, world }) {
     for (let k = 0; k < state.count; k++) {
       const t0 = state.times[k];
       const nextBreak = k + 1 < state.count && state.times[k + 1] < 0;
-      const a = t0 < 0 || nextBreak ? 0 : Math.max(0, 1 - (s.time - t0) / LIFE) * 0.35;
-      for (const v of [0, 1]) col.set([0.62, 0.69, 0.8, a], (k * 2 + v) * 4);
+      const a = t0 < 0 || nextBreak ? 0 : Math.max(0, 1 - (s.time - t0) / LIFE) * 0.22;
+      // A groove reads as a slightly darker, bluer line in the snow (never brighter than the snow).
+      for (const v of [0, 1]) col.set([0.3, 0.37, 0.5, a], (k * 2 + v) * 4);
     }
     geometry.setDrawRange(0, Math.max(0, state.count - 1) * 6);
     geometry.attributes.position.needsUpdate = true;

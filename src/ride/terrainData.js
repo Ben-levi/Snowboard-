@@ -43,7 +43,7 @@ export function makeHeightfield({ cols, rows, cell, base, scale }, data) {
 }
 
 // Approximate download sizes, for the progress bar before the server tells us.
-const EXPECTED = { 'terrain.bin.gz': 640e3, 'far.bin': 132e3, 'world.json': 330e3, 'features.json': 128e3, 'mask.png': 110e3 };
+const EXPECTED = { 'terrain.bin.gz': 640e3, 'far.bin': 132e3, 'world.json': 330e3, 'features.json': 128e3, 'mask.png': 110e3, 'light.png': 170e3, 'farlight.png': 45e3 };
 
 // Fetch a file as bytes, reporting bytes received.
 async function fetchBytes(url, onBytes) {
@@ -95,7 +95,7 @@ export async function loadResort(id, { baseUrl = import.meta.env.BASE_URL, onPro
   // Everything downloads at once (ride.html also preloads the big files while the code loads).
   const canGunzip = typeof DecompressionStream !== 'undefined';
   const metaReady = fetchBytes(`${dir}meta.json`, () => {}).then((b) => JSON.parse(text(b)));
-  const [meta, nearBytes, farBytes, worldBytes, featureBytes, maskBytes] = await Promise.all([
+  const [meta, nearBytes, farBytes, worldBytes, featureBytes, maskBytes, lightBytes, farLightBytes] = await Promise.all([
     metaReady,
     canGunzip
       ? Promise.all([fetchBytes(`${dir}terrain.bin.gz`, tick).then(gunzip), metaReady]).then(([b, m]) => decodeHeights(b, m.near.cols))
@@ -104,13 +104,14 @@ export async function loadResort(id, { baseUrl = import.meta.env.BASE_URL, onPro
     fetchBytes(`${dir}world.json`, tick),
     fetchBytes(`${dir}features.json`, tick).catch(() => null),
     fetchBytes(`${dir}mask.png`, tick),
+    fetchBytes(`${dir}light.png`, tick).catch(() => null),
+    fetchBytes(`${dir}farlight.png`, tick).catch(() => null),
   ]);
   onProgress?.(1);
-  // Decode the mask PNG off the main thread.
-  const maskImage = await createImageBitmap(new Blob([maskBytes], { type: 'image/png' }), {
-    premultiplyAlpha: 'none',
-    colorSpaceConversion: 'none',
-  });
+  // Decode the images off the main thread.
+  const image = (bytes) =>
+    bytes ? createImageBitmap(new Blob([bytes], { type: 'image/png' }), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }) : null;
+  const [maskImage, lightImage, farLightImage] = await Promise.all([image(maskBytes), image(lightBytes), image(farLightBytes)]);
   return {
     meta,
     near: makeHeightfield({ ...meta.near, scale: meta.scale }, nearBytes),
@@ -118,6 +119,8 @@ export async function loadResort(id, { baseUrl = import.meta.env.BASE_URL, onPro
     features: featureBytes ? JSON.parse(text(featureBytes)) : null,
     world: JSON.parse(text(worldBytes)),
     maskImage,
+    lightImage,
+    farLightImage,
   };
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { patchMaterial } from './atmosphere.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createRider, step, STEP } from './physics.js';
 import { botDone, botInput, createBot } from './bot.js';
@@ -27,12 +28,45 @@ function rng(seed) {
   };
 }
 
-// A simple figure: jacket/body, helmet, and a board along local +x (like the main rider model).
+// A capsule from a to b (for limbs).
+function limb(a, b, r) {
+  const from = new THREE.Vector3(...a);
+  const to = new THREE.Vector3(...b);
+  const dir = to.clone().sub(from);
+  const g = new THREE.CapsuleGeometry(r, Math.max(0.01, dir.length()), 3, 8);
+  g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize()));
+  const mid = from.add(to).multiplyScalar(0.5);
+  g.translate(mid.x, mid.y, mid.z);
+  return g;
+}
+
+// A snowboarder in a relaxed riding stance, board along local +x like the main rider model:
+// jacket and arms (coloured per rider), helmet with goggles, dark trousers, boots and board.
 function figureGeometry() {
-  const body = new THREE.CapsuleGeometry(0.26, 0.75, 4, 8).translate(0, 1.05, 0);
-  const legs = new THREE.CapsuleGeometry(0.2, 0.45, 4, 8).translate(0, 0.45, 0);
-  const head = new THREE.SphereGeometry(0.17, 10, 8).translate(0, 1.72, 0);
-  return { body: mergeGeometries([body, legs]), head, board: new THREE.BoxGeometry(1.5, 0.05, 0.28).translate(0, 0.03, 0) };
+  const body = mergeGeometries([
+    limb([0, 0.98, 0.02], [0.02, 1.42, 0.08], 0.2), // torso, leaning a little towards the toes
+    limb([0.18, 1.38, 0.08], [0.52, 1.12, 0.1], 0.075), // leading arm, out for balance
+    limb([-0.18, 1.38, 0.08], [-0.42, 1.08, 0.18], 0.075), // trailing arm
+  ]);
+  const head = mergeGeometries([
+    new THREE.SphereGeometry(0.15, 12, 8).translate(0.02, 1.7, 0.08),
+    new THREE.BoxGeometry(0.2, 0.07, 0.08).translate(0.02, 1.68, 0.2), // goggles
+  ]);
+  const legs = [
+    limb([0.13, 0.95, 0.02], [0.3, 0.55, 0.14], 0.1), // thighs, knees bent and forward
+    limb([-0.13, 0.95, 0.02], [-0.2, 0.55, 0.14], 0.1),
+    limb([0.3, 0.55, 0.14], [0.27, 0.16, 0], 0.085), // shins
+    limb([-0.2, 0.55, 0.14], [-0.27, 0.16, 0], 0.085),
+    new THREE.BoxGeometry(0.3, 0.14, 0.16).translate(0.27, 0.12, 0), // boots
+    new THREE.BoxGeometry(0.3, 0.14, 0.16).translate(-0.27, 0.12, 0),
+    new THREE.BoxGeometry(1.5, 0.04, 0.28).translate(0, 0.03, 0), // board
+  ].map((g) => {
+    g.deleteAttribute('uv');
+    return g.index ? g.toNonIndexed() : g;
+  });
+  body.deleteAttribute('uv');
+  head.deleteAttribute('uv');
+  return { body, head, board: mergeGeometries(legs) };
 }
 
 // Other riders out on the popular runs, ridden by the bot at a relaxed pace.
@@ -43,9 +77,9 @@ export default function Npcs({ sim, quality }) {
   const parts = useMemo(() => {
     const g = figureGeometry();
     const mats = {
-      body: new THREE.MeshStandardMaterial({ roughness: 0.7 }),
-      head: new THREE.MeshStandardMaterial({ color: '#1b1e23', roughness: 0.4, metalness: 0.2 }),
-      board: new THREE.MeshStandardMaterial({ color: '#2b2f36', roughness: 0.5 }),
+      body: patchMaterial(new THREE.MeshStandardMaterial({ roughness: 0.7 })),
+      head: patchMaterial(new THREE.MeshStandardMaterial({ color: '#1b1e23', roughness: 0.4, metalness: 0.2 })),
+      board: patchMaterial(new THREE.MeshStandardMaterial({ color: '#2b2f36', roughness: 0.5 })),
     };
     const make = (geo, mat) => {
       const im = new THREE.InstancedMesh(geo, mat, count);

@@ -122,6 +122,29 @@ export function prepareWorld(near, features) {
   }
   for (const t of trees) addDisc(mask, ...px([t.x, t.z]), 3.2 * t.s * sc, 1, 140);
 
+  // Boulders off-piste: mostly on steep ground and scree, a few scattered in the open.
+  const rocks = [];
+  const rr = rng(4321);
+  const rockStep = 13;
+  for (let z = near.z0 + 40; z < near.z0 + near.depth - 40 && rocks.length < 9000; z += rockStep) {
+    for (let x = near.x0 + 40; x < near.x0 + near.width - 40 && rocks.length < 9000; x += rockStep) {
+      const jx = x + (rr() - 0.5) * rockStep;
+      const jz = z + (rr() - 0.5) * rockStep;
+      near.normalAt(jx, jz, n);
+      const steep = Math.min(1, Math.max(0, (0.93 - n[1]) / 0.15));
+      const field = valueNoise(jx * 0.01 + 5, jz * 0.01 + 11);
+      const chance = steep * steep * 0.16 * field + (field > 0.78 ? 0.012 : 0.001);
+      const roll = rr();
+      const keep = rr();
+      if (roll > chance) continue;
+      if (maskAt(jx, jz, 0) > 10 || maskAt(jx, jz, 2) > 10 || occupied(jx, jz)) continue;
+      const gi = Math.round((jx - near.x0) / near.cell);
+      const gj = Math.round((jz - near.z0) / near.cell);
+      if (groomed[gj * (near.cols + 1) + gi] > 0.001) continue;
+      rocks.push({ x: jx, z: jz, s: 0.5 + rr() ** 2 * 2.8, rot: rr() * Math.PI * 2, keep });
+    }
+  }
+
   // Piste poles on the popular runs, along both edges.
   const markers = [];
   for (const p of courses) {
@@ -148,7 +171,7 @@ export function prepareWorld(near, features) {
 
   const lifts = layoutLifts(near, f);
   const furniture = placeFurniture(near, courses, lifts);
-  return { courses, trees, markers, furniture, mask };
+  return { courses, trees, rocks, markers, furniture, mask };
 }
 
 // Orange nets where the snow drops away beside a run, padded towers on the runs, start signs, snow guns.
@@ -243,7 +266,7 @@ export function layoutBuildings(near, features) {
 }
 
 // Everything the rider can hit.
-export function buildObstacles({ buildings, lifts, trees, furniture }) {
+export function buildObstacles({ buildings, lifts, trees, rocks = [], furniture }) {
   const index = createObstacleIndex(16, 2);
   for (const b of buildings) index.add({ ring: b.ring });
   for (const l of lifts) {
@@ -251,6 +274,7 @@ export function buildObstacles({ buildings, lifts, trees, furniture }) {
     for (const t of l.towers) index.add({ x: t.x, z: t.z, r: t.end ? (l.kind === 'drag' ? 2 : 4) : 0.8 });
   }
   for (const t of trees) index.add({ x: t.x, z: t.z, r: 0.35 * t.s });
+  for (const r of rocks) if (r.s > 0.9) index.add({ x: r.x, z: r.z, r: 0.6 * r.s });
   for (const n of furniture.nets) {
     const hx = Math.sin(n.yaw) * 6.2;
     const hz = Math.cos(n.yaw) * 6.2;
@@ -342,7 +366,7 @@ export function courseStarts(near, courses) {
 const r1 = (v) => Math.round(v * 10) / 10;
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
-export function serializeWorld({ courses, trees, markers, furniture }, pars) {
+export function serializeWorld({ courses, trees, rocks = [], markers, furniture }, pars) {
   const colors = [...new Set(markers.map((m) => m.color))];
   return {
     version: 1,
@@ -356,6 +380,7 @@ export function serializeWorld({ courses, trees, markers, furniture }, pars) {
     })),
     // Flat arrays keep the file small: trees [x, z, scale, rotation, keep], markers [x, z, colour index].
     trees: trees.flatMap((t) => [r1(t.x), r1(t.z), r3(t.s), r3(t.rot), r3(t.keep)]),
+    rocks: rocks.flatMap((r) => [r1(r.x), r1(r.z), r3(r.s), r3(r.rot), r3(r.keep)]),
     colors,
     markers: markers.flatMap((m) => [r1(m.x), r1(m.z), colors.indexOf(m.color)]),
     nets: furniture.nets.flatMap((n) => [r1(n.x), r1(n.z), r3(n.yaw), r1(n.len)]),
@@ -376,6 +401,7 @@ const chunk = (arr, n, fn) => {
 export function parseWorld(json, near, share = 1) {
   const courses = json.courses;
   const trees = chunk(json.trees, 5, ([x, z, s, rot, keep]) => ({ x, z, s, rot, keep, y: near.heightAt(x, z) })).filter((t) => t.keep <= share);
+  const rocks = chunk(json.rocks ?? [], 5, ([x, z, s, rot, keep]) => ({ x, z, s, rot, keep, y: near.heightAt(x, z) })).filter((r) => r.keep <= Math.max(share, 0.35));
   const markers = chunk(json.markers, 3, ([x, z, c]) => ({ x, z, y: near.heightAt(x, z), color: json.colors[c] }));
   const furniture = {
     nets: chunk(json.nets, 4, ([x, z, yaw, len]) => ({ x, z, yaw, len, y: near.heightAt(x, z) })),
@@ -383,5 +409,5 @@ export function parseWorld(json, near, share = 1) {
     guns: chunk(json.guns, 3, ([x, z, yaw]) => ({ x, z, yaw, y: near.heightAt(x, z) })),
     signs: json.signs.map((s) => ({ ...s, y: near.heightAt(s.x, s.z) })),
   };
-  return { courses, trees, markers, furniture };
+  return { courses, trees, rocks, markers, furniture };
 }

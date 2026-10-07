@@ -81,6 +81,14 @@ src/components/…            HomeView, GearView, GearSection, ShoppingList, Cre
   - **Groomed and graded runs:** small bumps are smoothed out and the cross-slope is graded (cat-tracks like Pastora are cut level into the hillside). The boardercross gets rollers and banked berms.
   - **Piste furniture:** orange safety nets where the snow drops away, padded lift towers, start signs and snow guns.
   - **Other riders:** bot-driven riders out on the runs.
+- **Graphics** (everything generated in code, no downloaded art besides the rider):
+  - **Mountain light** (`src/ride/lightBake.js`, baked at build time): ridges cast shadows from a low morning sun, valleys and gullies get less sky light, and the ridge shape decides where rock breaks through. Everything standing on the mountain (trees, buildings, lifts, riders) is lit by the same bake (`atmosphere.js`).
+  - **Sky and air** (`SkyDome.jsx`, `atmosphere.js`): a deep blue sky with a sun and drifting clouds; height fog fades distant slopes into exactly the sky colour behind them.
+  - **Snow and rock** (`terrainMaterial.js`): powder with wind ripples, groomed pistes with corduroy and skiers' tracks, blue shade, glinting crystals near the camera, and dark rock outcrops with dusted ledges on steep faces and scoured ridges.
+  - **Trees and boulders** (`natureGeometry.js`, `Nature.jsx`): snowy firs in three shapes with a detailed model nearby and a light one further away; boulders off-piste on steep ground.
+  - **The village** (`villageGeometry.js`, `facadeMaterial.js`): Pas de la Casa from its OSM footprints, with stone ground floors, shop fronts, framed windows reflecting the sky (some lit), wooden balconies, and pitched snowy roofs with chimneys.
+  - **Lifts and furniture** (`models.js`): tapered towers with sheave trains, terminals with streamlined hoods, six-seat chairs, gondola cabins, T-bars, fan snow guns, padded towers and orange safety nets.
+  - **Phones** get the same world with lighter shaders, fewer trees and boulders, and nearer level-of-detail switches (`quality.js`).
 - **Medals and ghost:**
   - **Target times:** a bot rides each run with the real physics. Its time is gold; silver is +12% and bronze +30%.
   - **Stars and unlocks:** medals give 1–3 stars. Reds unlock at 3 stars, blacks at 9 and the boardercross at 5.
@@ -124,7 +132,8 @@ The **Bake resort** GitHub workflow (Actions → Bake resort → Run workflow) r
 | --- | --- |
 | `terrain.bin.gz` | groomed heights (pistes smoothed, boardercross rollers and berms), delta encoded and gzipped: ~0.6 MB instead of 2 MB |
 | `mask.png` | snow texture mask: pistes, roads, shade under trees |
-| `world.json` | curated runs with gates and gold times, trees, piste poles, nets, pads, snow guns, signs |
+| `light.png`, `farlight.png` | baked sunlight (ridge shadows), sky light (valleys darker) and ridge shape, near and horizon grids |
+| `world.json` | curated runs with gates and gold times, trees, boulders, piste poles, nets, pads, snow guns, signs |
 | `bots.json` | the gold-medal bot's ghost for each run, fetched in the background once the menu is up |
 
 The pure logic is in `src/ride/worldPrep.js` (with `raster.js` and `terrainCodec.js`), shared with the tests. `ride.html` preloads the big files so they download while the code loads.

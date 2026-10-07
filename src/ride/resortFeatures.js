@@ -20,7 +20,7 @@ export function prepareFeatures(resort, quality) {
   const world = parseWorld(resort.world, near, quality.trees);
   const buildings = layoutBuildings(near, f);
   const lifts = layoutLifts(near, f);
-  const obstacles = buildObstacles({ buildings, lifts, trees: world.trees, furniture: world.furniture });
+  const obstacles = buildObstacles({ buildings, lifts, trees: world.trees, rocks: world.rocks, furniture: world.furniture });
   const pisteAt = pisteLookup(f);
 
   // The mask arrives as a decoded ImageBitmap: rows top (north) to bottom, no flip needed.
@@ -39,6 +39,7 @@ export function prepareFeatures(resort, quality) {
     buildings,
     lifts,
     trees: world.trees,
+    rocks: world.rocks,
     markers: world.markers,
     furniture: world.furniture,
     pisteAt,

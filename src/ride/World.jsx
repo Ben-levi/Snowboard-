@@ -1,6 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Sky } from '@react-three/drei';
 import * as THREE from 'three';
 import { step, STEP } from './physics.js';
 import { readInput, takePressed } from './input.js';
@@ -10,17 +9,17 @@ import { updateRun } from './courses.js';
 import { updateAudio } from './audio.js';
 import { SnowSpray, Trail } from './Effects.jsx';
 import { createTerrainMaterial } from './terrainMaterial.js';
+import { bindResortLight, SUN_DIR } from './atmosphere.js';
+import SkyDome from './SkyDome.jsx';
 import { FarTerrain, NearTerrain } from './Terrain.jsx';
 import Rider from './Rider.jsx';
-import { Lifts, PisteMarkers, Trees, Village } from './Scenery.jsx';
+import { Lifts, PisteMarkers, Village } from './Scenery.jsx';
+import { Rocks, Trees } from './Nature.jsx';
 import Gates from './Gates.jsx';
 import Ghost from './Ghost.jsx';
 import PisteFurniture from './PisteFurniture.jsx';
 import Npcs from './Npcs.jsx';
 
-// Late-morning sun from the south-east (the resort's main slopes face north and east).
-export const SUN_DIR = new THREE.Vector3(0.45, 0.62, 0.64).normalize();
-const SKY_SUN = SUN_DIR.clone().multiplyScalar(1000);
 
 const camDir = new THREE.Vector3(0, 0, 1);
 const want = new THREE.Vector3();
@@ -146,6 +145,11 @@ function Simulation({ sim, world, onEvents, shadowSize = 2048, shadowBox = 40 })
       spring(camera.position, camVel, want, 7, dt);
       spring(lookPos, lookVel, look, 11, dt);
     }
+    if (S.debugCam) {
+      // Debug and screenshot hook: a fixed camera { pos: [x, y, z], look: [x, y, z] }.
+      camera.position.set(...S.debugCam.pos);
+      lookPos.set(...S.debugCam.look);
+    }
     const under = world.heightAt(camera.position.x, camera.position.z) + 1;
     if (camera.position.y < under) camera.position.y = under;
     camera.lookAt(lookPos);
@@ -162,8 +166,8 @@ function Simulation({ sim, world, onEvents, shadowSize = 2048, shadowBox = 40 })
   return (
     <directionalLight
       ref={sun}
-      intensity={3.1}
-      color="#fff4e6"
+      intensity={3.6}
+      color="#fff0dc"
       castShadow
       shadow-mapSize={[shadowSize, shadowSize]}
       shadow-camera-left={-shadowBox}
@@ -172,8 +176,8 @@ function Simulation({ sim, world, onEvents, shadowSize = 2048, shadowBox = 40 })
       shadow-camera-bottom={-shadowBox}
       shadow-camera-near={1}
       shadow-camera-far={400}
-      shadow-bias={-0.0004}
-      shadow-normalBias={0.04}
+      shadow-bias={-0.0005}
+      shadow-normalBias={0.07}
     />
   );
 }
@@ -185,6 +189,7 @@ export default function World({ resort, sim, quality, course, ghost, onEvents, c
     return m;
   }, []);
   useEffect(() => () => (material.dispose(), farMaterial.dispose()), [material, farMaterial]);
+  useEffect(() => bindResortLight(resort), [resort]);
   sim.current.terrainMaterial = material;
   // Other riders join after the first moments, so the first frames stay light.
   const [extras, setExtras] = useState(false);
@@ -202,10 +207,9 @@ export default function World({ resort, sim, quality, course, ghost, onEvents, c
 
   return (
     <>
-      <color attach="background" args={['#a9c6e3']} />
-      <fog attach="fog" args={['#c6d8ea', 1200, 16000]} />
-      <Sky sunPosition={SKY_SUN} distance={40000} turbidity={2.2} rayleigh={0.6} mieCoefficient={0.004} mieDirectionalG={0.85} />
-      <hemisphereLight args={['#b8d0ff', '#eef2f8', 0.85]} />
+      <color attach="background" args={['#9fbbe0']} />
+      <SkyDome clouds={quality.clouds ?? 1} />
+      <hemisphereLight args={['#7fa4e6', '#d7dee8', 1.6]} />
       <Simulation sim={sim} world={sim.current.world} onEvents={onEvents} shadowSize={quality.shadowSize} shadowBox={quality.shadowBox ?? 40} />
       <NearTerrain field={resort.near} material={material} lodScale={quality.lodScale} />
       <FarTerrain far={resort.far} near={resort.near} material={farMaterial} />
@@ -215,9 +219,10 @@ export default function World({ resort, sim, quality, course, ghost, onEvents, c
       </Suspense>
       <SnowSpray sim={sim} />
       <Trail sim={sim} world={resort.near} />
-      <Village buildings={features.buildings} />
+      <Village buildings={features.buildings} quality={quality} />
       <Lifts lifts={features.lifts} quality={quality} />
       <Trees trees={features.trees} quality={quality} />
+      <Rocks rocks={features.rocks} quality={quality} />
       <PisteMarkers markers={features.markers} />
       <PisteFurniture furniture={features.furniture} quality={quality} />
       {extras && <Npcs sim={sim} quality={quality} />}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { patchMaterial } from './atmosphere.js';
 
 const HALF = 10; // m from the gate centre to each pole
 
@@ -11,11 +12,11 @@ export default function Gates({ sim, course, heightAt }) {
     const flag = new THREE.PlaneGeometry(1.4, 0.9).translate(0.7, 2.4, 0);
     const banner = new THREE.BoxGeometry(1, 1.1, 0.08);
     const mats = {
-      next: new THREE.MeshStandardMaterial({ color: '#ff7a1a', emissive: '#ff7a1a', emissiveIntensity: 0.6, side: THREE.DoubleSide }),
-      later: new THREE.MeshStandardMaterial({ color: '#2f7cf6', side: THREE.DoubleSide }),
-      pole: new THREE.MeshStandardMaterial({ color: '#e9edf2' }),
-      start: new THREE.MeshStandardMaterial({ color: '#2fbf4f', emissive: '#2fbf4f', emissiveIntensity: 0.35 }),
-      finish: new THREE.MeshStandardMaterial({ color: '#e03131', emissive: '#e03131', emissiveIntensity: 0.35 }),
+      next: patchMaterial(new THREE.MeshStandardMaterial({ color: '#ff7a1a', emissive: '#ff7a1a', emissiveIntensity: 0.6, side: THREE.DoubleSide })),
+      later: patchMaterial(new THREE.MeshStandardMaterial({ color: '#2f7cf6', side: THREE.DoubleSide })),
+      pole: patchMaterial(new THREE.MeshStandardMaterial({ color: '#e9edf2' })),
+      start: patchMaterial(new THREE.MeshStandardMaterial({ color: '#2fbf4f', emissive: '#2fbf4f', emissiveIntensity: 0.35 })),
+      finish: patchMaterial(new THREE.MeshStandardMaterial({ color: '#e03131', emissive: '#e03131', emissiveIntensity: 0.35 })),
     };
     return { pole, flag, banner, mats };
   }, []);

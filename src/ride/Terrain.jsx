@@ -126,7 +126,7 @@ export function NearTerrain({ field, material, lodScale = 1 }) {
   });
 
   return (
-    <group>
+    <group name="terrain">
       {chunks.map((c) => (
         <primitive key={`${c.ci}-${c.cj}`} object={c.mesh} />
       ))}

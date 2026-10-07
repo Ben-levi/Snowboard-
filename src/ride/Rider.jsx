@@ -1,6 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
+import { patchObject } from './atmosphere.js';
 import * as THREE from 'three';
 
 // The Blender-built rider from the gear app (tools/blender/dress_rider.py).
@@ -27,6 +28,7 @@ export default function Rider({ sim, world }) {
         o.receiveShadow = true;
       }
     });
+    patchObject(root); // mountain shade and haze, like everything else
     return root;
   }, [scene]);
   const group = useRef();

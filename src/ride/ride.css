@@ -11,6 +11,11 @@
 html, body, #root { margin: 0; height: 100%; background: #0b1016; overflow: hidden; overscroll-behavior: none; }
 .ride { position: fixed; inset: 0; }
 .ride-canvas { position: absolute !important; inset: 0; touch-action: none; }
+/* A soft lens vignette over the 3D view (free: no extra render pass). The canvas wrapper is a div. */
+.ride-canvas::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 85% 75% at 50% 45%, transparent 60%, rgba(8, 20, 40, 0.28) 100%);
+}
 
 .ride-screen {
   position: absolute; inset: 0; display: grid; place-items: center; padding: 16px;
