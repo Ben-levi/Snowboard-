@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import * as THREE from 'three';
@@ -186,6 +186,12 @@ export default function World({ resort, sim, quality, course, ghost, onEvents, c
   }, []);
   useEffect(() => () => (material.dispose(), farMaterial.dispose()), [material, farMaterial]);
   sim.current.terrainMaterial = material;
+  // Other riders join after the first moments, so the first frames stay light.
+  const [extras, setExtras] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setExtras(true), 1500);
+    return () => clearTimeout(id);
+  }, []);
   const features = sim.current.features;
   useEffect(() => {
     const u = material.userData.uniforms;
@@ -214,7 +220,7 @@ export default function World({ resort, sim, quality, course, ghost, onEvents, c
       <Trees trees={features.trees} quality={quality} />
       <PisteMarkers markers={features.markers} />
       <PisteFurniture furniture={features.furniture} quality={quality} />
-      <Npcs sim={sim} quality={quality} />
+      {extras && <Npcs sim={sim} quality={quality} />}
       {course && <Gates key={course.id} sim={sim} course={course} heightAt={resort.near.heightAt} />}
       {children}
     </>

@@ -2,23 +2,22 @@
 // - groomed corridors: bumps under ~20 m are smoothed away, like a piste basher would
 // - boardercross: rollers along the line and banked berms on the outside of turns
 
+// Separable box blur with running sums (constant cost per cell), edges clamped.
 function boxBlur(src, w, h, radius, passes) {
-  let a = Float32Array.from(src);
+  const a = Float32Array.from(src);
   const b = new Float32Array(a.length);
   const n = radius * 2 + 1;
+  const run = (from, to, len, stride, offset) => {
+    let s = 0;
+    for (let k = -radius; k <= radius; k++) s += from[offset + Math.min(len - 1, Math.max(0, k)) * stride];
+    for (let i = 0; i < len; i++) {
+      to[offset + i * stride] = s / n;
+      s += from[offset + Math.min(len - 1, i + radius + 1) * stride] - from[offset + Math.max(0, i - radius) * stride];
+    }
+  };
   for (let p = 0; p < passes; p++) {
-    for (let j = 0; j < h; j++)
-      for (let i = 0; i < w; i++) {
-        let s = 0;
-        for (let k = -radius; k <= radius; k++) s += a[j * w + Math.min(w - 1, Math.max(0, i + k))];
-        b[j * w + i] = s / n;
-      }
-    for (let j = 0; j < h; j++)
-      for (let i = 0; i < w; i++) {
-        let s = 0;
-        for (let k = -radius; k <= radius; k++) s += b[Math.min(h - 1, Math.max(0, j + k)) * w + i];
-        a[j * w + i] = s / n;
-      }
+    for (let j = 0; j < h; j++) run(a, b, w, 1, j * w);
+    for (let i = 0; i < w; i++) run(b, a, h, w, i);
   }
   return a;
 }

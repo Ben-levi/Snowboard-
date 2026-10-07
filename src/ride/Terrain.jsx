@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -92,15 +92,34 @@ export function NearTerrain({ field, material, lodScale = 1 }) {
     [chunks],
   );
 
-  let frame = 0;
+  const frame = useRef(0);
+  // Level of detail by distance. New geometry is built a few chunks per frame, nearest first, so the
+  // first frames stay quick on phones; until then every chunk shows its cheap coarse version.
+  const pending = useRef(true);
   useFrame(() => {
-    if (frame++ % 10) return;
+    frame.current++;
+    if (!pending.current && frame.current % 10) return;
+    pending.current = false;
     const size = CHUNK * field.cell;
-    for (const c of chunks) {
-      const d = Math.max(0, Math.hypot(camera.position.x - c.cx, camera.position.z - c.cz) - size * 0.7);
-      const lod = d < 700 * lodScale ? 0 : d < 2000 * lodScale ? 1 : 2;
+    for (const c of chunks) c.d = Math.max(0, Math.hypot(camera.position.x - c.cx, camera.position.z - c.cz) - size * 0.7);
+    const order = [...chunks].sort((a, b) => a.d - b.d);
+    let budget = 3;
+    for (const c of order) {
+      const lod = c.d < 700 * lodScale ? 0 : c.d < 2000 * lodScale ? 1 : 2;
       if (lod === c.lod) continue;
-      c.geos[lod] ??= chunkGeometry(field, c.ci, c.cj, 1 << lod);
+      if (!c.geos[lod]) {
+        if (c.lod < 0 && lod !== 2) {
+          c.geos[2] ??= chunkGeometry(field, c.ci, c.cj, 4); // something to show right away
+          c.mesh.geometry = c.geos[2];
+          c.lod = 2;
+        }
+        if (budget <= 0 && c.lod >= 0) {
+          pending.current = true;
+          continue;
+        }
+        c.geos[lod] = chunkGeometry(field, c.ci, c.cj, 1 << lod);
+        budget--;
+      }
       c.mesh.geometry = c.geos[lod];
       c.lod = lod;
     }

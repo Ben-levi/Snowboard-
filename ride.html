@@ -8,6 +8,11 @@
     <title>גלישה בפאס דה לה קאסה · צוות השלג</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Start downloading the mountain while the code loads (same requests as terrainData.loadResort). -->
+    <link rel="preload" as="fetch" crossorigin href="/resort/pas-de-la-casa/terrain.bin.gz" />
+    <link rel="preload" as="fetch" crossorigin href="/resort/pas-de-la-casa/world.json" />
+    <link rel="preload" as="fetch" crossorigin href="/resort/pas-de-la-casa/mask.png" />
+    <link rel="preload" as="fetch" crossorigin href="/resort/pas-de-la-casa/far.bin" />
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800&display=swap" rel="stylesheet" />
   </head>
   <body>

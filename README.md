@@ -118,6 +118,17 @@ node tools/resort/bake.mjs pas-de-la-casa --skip-osm       # terrain only
 
 The **Bake resort** GitHub workflow (Actions → Bake resort → Run workflow) runs the same bake on GitHub's runners and commits the result. That's useful where Overpass isn't reachable.
 
+`tools/resort/prepare.mjs` then does the heavy, never-changing work once, so phones only download and draw. It needs no network and runs automatically before `npm run dev` and `npm run build` (or `npm run prepare:resort`). Its outputs are gitignored:
+
+| File | What |
+| --- | --- |
+| `terrain.bin.gz` | groomed heights (pistes smoothed, boardercross rollers and berms), delta encoded and gzipped: ~0.6 MB instead of 2 MB |
+| `mask.png` | snow texture mask: pistes, roads, shade under trees |
+| `world.json` | curated runs with gates and gold times, trees, piste poles, nets, pads, snow guns, signs |
+| `bots.json` | the gold-medal bot's ghost for each run, fetched in the background once the menu is up |
+
+The pure logic is in `src/ride/worldPrep.js` (with `raster.js` and `terrainCodec.js`), shared with the tests. `ride.html` preloads the big files so they download while the code loads.
+
 Trees are placed procedurally, because OSM has no forest mapped here: below a ~2,250 m treeline, and off pistes, roads, buildings and lift lines. Peaks come out ~50 m lower than their mapped heights because the source elevation data is ~30 m resolution.
 
 ## The rider models

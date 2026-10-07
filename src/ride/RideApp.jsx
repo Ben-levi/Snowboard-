@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { PerformanceMonitor } from '@react-three/drei';
 import { createRider, findSpawn } from './physics.js';
-import { loadResort } from './terrainData.js';
+import { loadBots, loadResort } from './terrainData.js';
 import { prepareFeatures } from './resortFeatures.js';
 import { createRun } from './courses.js';
-import { createBot, simulateRun } from './bot.js';
-import { createRecorder, loadGhost, saveGhost } from './ghost.js';
+import { createBot } from './bot.js';
+import { createRecorder, decodeGhost, loadGhost, saveGhost } from './ghost.js';
 import { isUnlocked, loadProgress, recordResult, saveProgress, targetsFor, totalStars } from './medals.js';
 import { attachKeyboard } from './input.js';
 import { startAudio } from './audio.js';
@@ -103,36 +103,31 @@ export default function RideApp() {
   const targetsRef = useRef(targets);
   targetsRef.current = targets;
 
+  const [loadPct, setLoadPct] = useState(0);
+
   useEffect(() => {
-    loadResort(RESORT)
+    loadResort(RESORT, { onProgress: setLoadPct })
       .then((r) => {
         sim.current = createSim(r, prepareFeatures(r, quality), quality);
         sim.current.settings = loadSettings(TOUCH);
         window.__ride = sim.current; // debug and end-to-end test hook
+        // Medal times were worked out at build time by the bot (tools/resort/prepare.mjs).
+        const tg = {};
+        for (const c of sim.current.features.courses) if (c.par) tg[c.id] = targetsFor(c.par);
+        setTargets(tg);
         setResort(r);
       })
       .catch((e) => setError(e.message));
   }, [quality]);
 
-  // Medal times: the bot rides each popular run once, one run per tick so the page stays responsive.
+  // The gold-medal bot runs (first ghosts) download in the background once the menu is up.
   useEffect(() => {
-    if (!resort) return undefined;
-    const { features, world } = sim.current;
-    let k = 0;
-    let id;
-    const next = () => {
-      const c = features.courses[k++];
-      if (!c) return;
-      const start = features.starts.find((s) => s.id === c.id);
-      const r = simulateRun(c, world, start);
-      if (r.finished) {
-        botRuns.current[c.id] = { data: Float32Array.from(r.ghost), splits: r.splits, time: r.time, mine: false };
-        setTargets((tg) => ({ ...tg, [c.id]: targetsFor(r.time) }));
-      }
-      id = setTimeout(next, 0);
-    };
-    id = setTimeout(next, 50);
-    return () => clearTimeout(id);
+    if (!resort) return;
+    loadBots(RESORT)
+      .then((bots) => {
+        for (const [id, b] of Object.entries(bots)) botRuns.current[id] = { time: b.time, splits: b.splits, encoded: b.data, mine: false };
+      })
+      .catch(() => {});
   }, [resort]);
 
   useEffect(() => {
@@ -224,7 +219,9 @@ export default function RideApp() {
   }
 
   function startCourse(c) {
-    const g = loadGhost(RESORT, c.id) ?? botRuns.current[c.id] ?? null;
+    const bot = botRuns.current[c.id];
+    if (bot && !bot.data) bot.data = decodeGhost(bot.encoded);
+    const g = loadGhost(RESORT, c.id) ?? bot ?? null;
     sim.current.ghost = g;
     sim.current.startCourse(c);
     setGhost(g);
@@ -320,8 +317,13 @@ export default function RideApp() {
                 </div>
               ))}
             </dl>
-            <button className="ride-btn" disabled={!resort} onClick={() => setPhase('menu')}>
-              {resort ? t.start : t.loading}
+            <button
+              className={`ride-btn${resort ? '' : ' loading'}`}
+              style={{ '--p': `${Math.round(loadPct * 100)}%` }}
+              disabled={!resort}
+              onClick={() => setPhase('menu')}
+            >
+              {resort ? t.start : loadPct < 1 ? t.loadingPct(Math.round(loadPct * 100)) : t.preparing}
             </button>
             <a className="ride-link" href="./">{t.backToApp}</a>
             <p className="ride-credits">{t.credits}</p>

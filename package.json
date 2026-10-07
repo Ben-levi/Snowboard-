@@ -4,11 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "npm run prepare:resort",
     "dev": "vite",
+    "prebuild": "npm run prepare:resort",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "bake:resort": "node tools/resort/bake.mjs pas-de-la-casa"
+    "bake:resort": "node tools/resort/bake.mjs pas-de-la-casa",
+    "prepare:resort": "node tools/resort/prepare.mjs pas-de-la-casa"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",
