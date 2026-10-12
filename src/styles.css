@@ -588,3 +588,38 @@ input, select, textarea { font: inherit; color: inherit; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .snowfall { display: none; }
 }
+
+/* ---- Home checklists ---- */
+.home { display: flex; flex-direction: column; gap: 14px; }
+.trip-card.compact .home-progress { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.list-card h2 { margin: 0 0 8px; }
+.check-add { display: flex; gap: 8px; margin-bottom: 10px; }
+.check-add input {
+  flex: 1; min-width: 0; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font: inherit;
+}
+.check-add input:focus { border-color: var(--brand); outline: none; }
+.check-suggest { margin: 4px 0 10px; display: flex; flex-direction: column; gap: 6px; }
+.check-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.check-row {
+  display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 4px 10px; min-height: 44px;
+}
+.check-row label { flex: 1; display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 6px 0; }
+.check-row input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--brand); flex: none; }
+.check-row.done span { text-decoration: line-through; opacity: 0.55; }
+.icon-btn {
+  background: none; border: 1px solid transparent; border-radius: 10px; min-width: 36px; min-height: 36px;
+  color: var(--muted); cursor: pointer; font-size: 1rem; filter: grayscale(1); opacity: 0.6;
+}
+.icon-btn:hover, .icon-btn.on { filter: none; opacity: 1; border-color: var(--line); }
+.icon-btn.on { background: var(--buy-bg); border-color: var(--buy); }
+.pack-section { margin-top: 8px; }
+.pack-section summary {
+  display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 8px 2px; font-weight: 700;
+}
+.pack-section .check-list { margin-bottom: 6px; }
+.trip-details > summary { cursor: pointer; list-style: none; }
+.trip-details > summary h2 { margin: 0; }
+.trip-details[open] > summary { margin-bottom: 10px; }
+.trip-details > .card { margin-bottom: 12px; }

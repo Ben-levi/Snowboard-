@@ -18,10 +18,10 @@ import ShoppingList from './components/ShoppingList.jsx';
 import Snowfall from './components/Snowfall.jsx';
 
 const TABS = [
-  { id: 'home', emoji: '🏠' },
-  { id: 'gear', emoji: '🏂' },
+  { id: 'home', emoji: '✅' },
   { id: 'crew', emoji: '👥' },
-  { id: 'requests', emoji: '📬' },
+  { id: 'gear', emoji: '🏂' },
+  { id: 'requests', emoji: '📬', whenUsed: true },
   { id: 'admin', emoji: '🔐', adminOnly: true },
 ];
 
@@ -241,7 +241,9 @@ export default function App() {
     body = <PickMember tripCode={tripCode} members={members} onPick={chooseMe} onLeave={leaveTrip} />;
   } else {
     const onRequest = (itemId, ownerId) => setDraft({ itemId, ownerId });
-    const tabs = TABS.filter((x) => !x.adminOnly || isAdmin);
+    // Borrowing is optional: its tab only appears once someone has asked or been asked.
+    const usesRequests = requests.some((r) => r.fromId === me.id || r.toId === me.id);
+    const tabs = TABS.filter((x) => (!x.adminOnly || isAdmin) && (!x.whenUsed || usesRequests || tab === x.id));
     body = (
       <>
         <nav className="tabs" aria-label={t.gear.sections}>

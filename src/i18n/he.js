@@ -22,7 +22,7 @@ export const t = {
   riders: { snowboard: '🏂 סנובורד', ski: '⛷️ סקי' },
   items: (n) => plural(n, 'פריט אחד', 'פריטים'),
 
-  tabs: { home: 'בית', gear: 'הציוד שלי', crew: 'החבר׳ה', requests: 'בקשות', admin: 'ניהול' },
+  tabs: { home: 'הרשימה שלי', crew: 'החבר׳ה', gear: 'ציוד תלת־ממד', requests: 'בקשות', admin: 'ניהול' },
   crewTabs: { people: 'אנשים', groups: 'קבוצות', board: 'טבלה' },
 
   join: {
@@ -114,6 +114,34 @@ export const t = {
     toGear: 'לציוד שלי ←',
     gearProgress: (done, total) => `${done} מתוך ${total} פריטים מסודרים`,
   },
+
+  list: {
+    ready: (done, total) => `${done} מתוך ${total} מוכנים`,
+    buyTitle: '🛒 מה צריך לקנות',
+    buyPlaceholder: 'למשל: גרביים חמים',
+    buyEmpty: 'אין מה לקנות כרגע 🎉',
+    buyFromGear: 'מרשימת הציוד',
+    rememberTitle: '🧠 לא לשכוח',
+    rememberPlaceholder: 'למשל: מטען לטלפון',
+    rememberEmpty: 'הוסיפו מה שחשוב לזכור לפני הטיול.',
+    packTitle: '🎒 אריזה וציוד',
+    packHint: 'סמנו מה שכבר יש לכם. 🛒 מוסיף לרשימת הקניות.',
+    packOpen: 'עוד לא סידרתי',
+    add: 'הוספה',
+    remove: 'מחיקה',
+    suggestions: 'הצעות להוספה',
+    addAll: 'להוסיף הכול',
+    tripTitle: '📌 מהמנהל לכולם',
+    tripInfo: '🗂️ פרטי הטיול',
+    buyIt: 'לקנות',
+    bought: 'נקנה',
+    done: 'סגור',
+    all3d: 'לתצוגת תלת־ממד ←',
+  },
+  starterRemember: [
+    'דרכון', 'תעודת ביטוח', 'כרטיס סקי', 'מטען ופאוור בנק', 'כסף / כרטיס אשראי', 'תרופות אישיות',
+    'משקפי שמש', 'בגד ים לג׳קוזי', 'כפכפים', 'אוזניות', 'מתאם חשמל', 'שקית לבגדים רטובים',
+  ],
 
   gear: {
     sections: 'אזורי ציוד',
@@ -222,6 +250,9 @@ export const t = {
     title: '🔐 ניהול הטיול',
     logout: 'יציאה ממצב מנהל',
     trip: '🗺️ פרטי הטיול',
+    checklist: '📌 רשימה לכולם',
+    checklistHint: 'פריטים שיופיעו ברשימה של כל אחד, למשל "להדפיס ביטוח".',
+    checklistPlaceholder: 'פריט לכולם…',
     tripName: 'שם הטיול',
     messages: '📣 הודעות',
     messagePlaceholder: 'הודעה לכל החבר׳ה…',

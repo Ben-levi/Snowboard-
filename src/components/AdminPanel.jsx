@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { t } from '../i18n/he.js';
 import { MEMBER_FIELDS, TRIP_FIELDS } from '../data/infoFields.js';
 import { hashPassword, MIN_PASSWORD } from '../lib/admin.js';
-import { groupMembers } from '../lib/groups.js';
+import { groupMembers, newId } from '../lib/groups.js';
 import { sortMessages } from '../lib/tripInfo.js';
 import { store } from '../lib/store/index.js';
 import Avatar from './Avatar.jsx';
@@ -36,6 +36,39 @@ function TripSection({ tripCode, trip, onToast }) {
           onToast(t.toast.saved);
         }}
       />
+    </Section>
+  );
+}
+
+// Trip-wide reminders: show up in everyone's "don't forget" list.
+function ChecklistSection({ tripCode, trip }) {
+  const [text, setText] = useState('');
+  const list = trip.checklist ?? [];
+  const save = (next) => store.updateTrip(tripCode, { checklist: next });
+  return (
+    <Section title={t.admin.checklist}>
+      <p className="muted small">{t.admin.checklistHint}</p>
+      <form
+        className="check-add"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const clean = text.trim().slice(0, 60);
+          if (!clean || list.length >= 30) return;
+          save([...list, { id: newId(), text: clean }]);
+          setText('');
+        }}
+      >
+        <input value={text} maxLength={60} placeholder={t.admin.checklistPlaceholder} onChange={(e) => setText(e.target.value)} />
+        <button className="btn btn-primary btn-small" disabled={!text.trim()}>{t.list.add}</button>
+      </form>
+      <ul className="check-list">
+        {list.map((x) => (
+          <li key={x.id} className="check-row">
+            <label><span>{x.text}</span></label>
+            <button type="button" className="icon-btn" aria-label={t.list.remove} onClick={() => save(list.filter((y) => y.id !== x.id))}>✕</button>
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }
@@ -241,6 +274,7 @@ export default function AdminPanel({ tripCode, trip, members, groups, messages, 
         <button className="btn btn-small" onClick={onLogout}>{t.admin.logout}</button>
       </div>
       <TripSection tripCode={tripCode} trip={trip} onToast={onToast} />
+      <ChecklistSection tripCode={tripCode} trip={trip} />
       <MessagesSection tripCode={tripCode} messages={messages} />
       <PeopleSection tripCode={tripCode} members={members} groups={groups} me={me} onToast={onToast} />
       <GroupsSection tripCode={tripCode} groups={groups} members={members} />
