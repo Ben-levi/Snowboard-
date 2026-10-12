@@ -2,14 +2,14 @@
 
 A light, fun gear tracker for a group ski/snowboard trip. The UI is in **Hebrew** (right-to-left); all strings live in [`src/i18n/he.js`](src/i18n/he.js).
 
-- **Home (בית)**: the trip card (resort, dates with a countdown, flights, lodging, meeting point, emergency contact), messages from the admin, and **my details** (ski pass dates, insurance, rental, instructor and lessons, my group). A big button leads on to the gear page.
+- **My list (הרשימה שלי)**: the first page, a personal checklist. **What to buy** (your own entries plus gear marked 🛒), **Don't forget** (free-form reminders with one-tap starter suggestions, plus trip-wide items from the admin), and **Packing**, the gear catalog as a flat tick-off list. One progress bar on top. Trip details, flights and "my details" are tucked into a collapsed section below, and admin messages show above the lists.
 - **My gear (הציוד שלי)**: a 3D rider on a dark studio stage (React Three Fiber). Drag to spin it, and tap a body part to open that section's gear dropdown. Snowboarders and skiers get their own model. Browsers without WebGL (or `?flat=1`) get a lightweight 2.5D SVG rider. Below it, **my to-do**: what's left to buy or borrow, and which friends can lend each item.
 - **Crew (החבר׳ה)**: three views:
   - **people**: everyone's progress, plus a "who has…?" search
   - **groups**: sub-groups (apartment, car, family), each with a shared list of things to bring or buy, and "I'll bring it"
   - **leaderboard**: ranked by items owned, with a podium and badges
-- **Requests (בקשות)**: ask to borrow, and the owner lends or declines. Accepted items show as "borrowed from X" and "lent to Y".
-- **Admin (ניהול)**: behind the trip's admin password. Edit trip details, post and pin messages, set each person's instructor, lessons, group and other details, manage groups, and change the password.
+- **Requests (בקשות)**: optional, and the tab only appears once someone has asked or been asked. Ask to borrow, and the owner lends or declines. Accepted items show as "borrowed from X" and "lent to Y".
+- **Admin (ניהול)**: behind the trip's admin password. Edit trip details, add trip-wide checklist items, post and pin messages, set each person's instructor, lessons, group and other details, manage groups, and change the password.
 
 Join with a **trip code** (for example `ALPS26`). A new code asks for a trip name and an **admin password**, and the creator is logged in as admin. Others unlock admin mode from the profile menu. Share the invite link (`?trip=ALPS26`) from the profile menu.
 
