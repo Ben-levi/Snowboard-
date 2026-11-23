@@ -137,6 +137,16 @@ export function createLocalAdapter() {
 
     deleteMember: async (code, id) => remove(code, 'members', id),
 
+    // key is 'buy' | 'remember' (arrays of { id, text, done }) or 'shared' ({ itemId: true }).
+    async setTodo(code, memberId, key, value) {
+      mutate(code, (d) => {
+        const m = d.members[memberId];
+        if (!m) return;
+        m.todo = { ...m.todo, [key]: value };
+        m.updatedAt = Date.now();
+      });
+    },
+
     async setItem(code, memberId, itemId, item) {
       mutate(code, (d) => {
         d.members[memberId].items[itemId] = item;

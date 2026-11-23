@@ -81,6 +81,8 @@ export function createFirestoreAdapter() {
     updateMember: (code, id, data) => patch(memberRef(code, id), data),
     setMemberInfo: (code, id, info) => patch(memberRef(code, id), nested('info', info)),
 
+    setTodo: (code, memberId, key, value) => patch(memberRef(code, memberId), nested('todo', { [key]: value })),
+
     async deleteMember(code, id) {
       await ready;
       await deleteDoc(memberRef(code, id));

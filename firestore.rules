@@ -14,19 +14,21 @@ service cloud.firestore {
     }
 
     function validTrip(d) {
-      return d.keys().hasOnly(['name', 'createdAt', 'updatedAt', 'adminHash', 'info'])
+      return d.keys().hasOnly(['name', 'createdAt', 'updatedAt', 'adminHash', 'info', 'checklist'])
         && shortString(d.name, 60)
         && (!('adminHash' in d) || shortString(d.adminHash, 64))
-        && (!('info' in d) || (d.info is map && d.info.size() <= 20));
+        && (!('info' in d) || (d.info is map && d.info.size() <= 20))
+        && (!('checklist' in d) || (d.checklist is list && d.checklist.size() <= 30));
     }
 
     function validMember(d) {
-      return d.keys().hasOnly(['name', 'rider', 'color', 'items', 'info', 'groupId', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['name', 'rider', 'color', 'items', 'info', 'todo', 'groupId', 'createdAt', 'updatedAt'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 30
         && d.rider in ['snowboard', 'ski']
         && d.color is string && d.color.size() <= 16
         && d.items is map && d.items.size() <= 60
         && (!('info' in d) || (d.info is map && d.info.size() <= 20))
+        && (!('todo' in d) || (d.todo is map && d.todo.size() <= 3))
         && (!('groupId' in d) || d.groupId == null || shortString(d.groupId, 40));
     }
 

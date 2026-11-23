@@ -23,7 +23,6 @@ export const MEMBER_FIELDS = [
   field('insuranceCompany', 'text', { half: true }),
   field('insurancePolicy', 'text', { half: true }),
   field('insurancePhone', 'tel'),
-  field('rental'),
   field('instructor', 'text', { half: true, adminOnly: true }),
   field('instructorPhone', 'tel', { half: true, adminOnly: true }),
   field('lessons', 'text', { adminOnly: true }),
