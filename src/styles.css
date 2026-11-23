@@ -54,19 +54,8 @@ input, select, textarea { font: inherit; color: inherit; }
 .error { color: var(--buy); font-size: 0.9rem; margin: 0.2em 0; }
 
 /* ---------- Background snow ---------- */
-.snowfall { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
-.snowfall span {
-  position: absolute;
-  top: -10px;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 6px rgba(160, 200, 255, 0.35);
-  opacity: 0.55;
-  animation: fall linear infinite;
-}
-@keyframes fall {
-  to { transform: translate(var(--drift), 105vh); }
-}
+.snowfall { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+@media (prefers-reduced-motion: reduce) { .snowfall { display: none; } }
 
 /* ---------- Shell ---------- */
 .app { position: relative; min-height: 100vh; }
@@ -623,3 +612,19 @@ input, select, textarea { font: inherit; color: inherit; }
 .trip-details > summary h2 { margin: 0; }
 .trip-details[open] > summary { margin-bottom: 10px; }
 .trip-details > .card { margin-bottom: 12px; }
+
+/* ---- Weather ---- */
+.weather-card { background: linear-gradient(160deg, rgba(60, 110, 190, 0.28), var(--surface) 70%); cursor: pointer; user-select: none; }
+.weather-card[data-kind='snow'] { background: linear-gradient(160deg, rgba(140, 180, 255, 0.35), var(--surface) 70%); }
+.weather-now { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.weather-emoji { font-size: 2.6rem; line-height: 1; filter: drop-shadow(0 2px 8px rgba(120, 170, 255, 0.5)); }
+.weather-temp { font-size: 2rem; font-weight: 800; line-height: 1; text-align: start; }
+.weather-meta { margin-inline-start: auto; display: flex; flex-direction: column; gap: 2px; text-align: end; }
+.weather-days { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.weather-days li {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px;
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line); border-radius: 12px; font-size: 0.9rem;
+}
+.snow-amt { font-size: 0.7rem; color: var(--muted); }
+.snow-amt.on { color: #9cc8ff; font-weight: 700; }
+@media (max-width: 420px) { .weather-days li { font-size: 0.8rem; padding: 6px 0; } }

@@ -16,6 +16,8 @@ import { CreateTrip, PickMember, TripCodeForm } from './components/JoinScreen.js
 import RequestsInbox from './components/RequestsInbox.jsx';
 import ShoppingList from './components/ShoppingList.jsx';
 import Snowfall from './components/Snowfall.jsx';
+import { useWeather } from './hooks/useWeather.js';
+import { snowIntensity, windFactor } from './lib/weather.js';
 
 const TABS = [
   { id: 'home', emoji: '✅' },
@@ -181,6 +183,7 @@ export default function App() {
   const [draft, setDraft] = useState(null);
   const [adminDialog, setAdminDialog] = useState(false);
   const [toast, setToast] = useState(null);
+  const weather = useWeather();
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -287,6 +290,7 @@ export default function App() {
                 me={me}
                 groups={groups}
                 messages={messages}
+                weather={weather}
                 isAdmin={isAdmin}
                 onGoGear={() => setTab('gear')}
                 onGoAdmin={() => setTab('admin')}
@@ -345,7 +349,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="app">
-        <Snowfall />
+        <Snowfall intensity={snowIntensity(weather.data?.now)} wind={windFactor(weather.data?.now)} />
         {demo && (
           <div className="demo-banner">
             {t.demoBanner}

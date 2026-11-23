@@ -3,6 +3,7 @@
 A light, fun gear tracker for a group ski/snowboard trip. The UI is in **Hebrew** (right-to-left); all strings live in [`src/i18n/he.js`](src/i18n/he.js).
 
 - **My list (הרשימה שלי)**: the first page, a personal checklist. **What to buy** (your own entries plus gear marked 🛒), **Don't forget** (free-form reminders with one-tap starter suggestions, plus trip-wide items from the admin), and **Packing**, the gear catalog as a flat tick-off list. One progress bar on top. Trip details, flights and "my details" are tucked into a collapsed section below, and admin messages show above the lists.
+- **Weather**: live conditions and a 7-day outlook for Pas de la Casa on the first page, from [Open-Meteo](https://open-meteo.com) (free, no API key, cached 30 minutes). The background snow reacts to it: heavier when it is snowing, pushed sideways by real wind. Tap the weather card for a puff of snow.
 - **My gear (הציוד שלי)**: a 3D rider on a dark studio stage (React Three Fiber). Drag to spin it, and tap a body part to open that section's gear dropdown. Snowboarders and skiers get their own model. Browsers without WebGL (or `?flat=1`) get a lightweight 2.5D SVG rider. Below it, **my to-do**: what's left to buy or borrow, and which friends can lend each item.
 - **Crew (החבר׳ה)**: three views:
   - **people**: everyone's progress, plus a "who has…?" search

@@ -6,6 +6,7 @@ import { addTodo, checklistProgress, gearToBuy, removeTodo, suggestionsFor, todo
 import { findGroup, myGroupTasks } from '../lib/groups.js';
 import { formatRange, sortMessages, tripPhase } from '../lib/tripInfo.js';
 import { itemOf, store } from '../lib/store/index.js';
+import WeatherCard from './WeatherCard.jsx';
 import Checklist from './Checklist.jsx';
 import FieldsForm, { groupField } from './FieldsForm.jsx';
 
@@ -309,11 +310,12 @@ function PackSection({ tripCode, me, onGoGear }) {
 }
 
 // First page: a personal checklist (what to buy, what not to forget, what to pack), then the trip details.
-export default function HomeView({ tripCode, trip, me, groups, messages, isAdmin, onGoGear, onGoAdmin, onToast }) {
+export default function HomeView({ tripCode, trip, me, groups, messages, weather, isAdmin, onGoGear, onGoAdmin, onToast }) {
   const progress = checklistProgress(me, trip);
   return (
     <div className="home">
       <Header tripCode={tripCode} trip={trip} progress={progress} />
+      <WeatherCard weather={weather} />
       <Messages messages={messages} />
       <BuySection tripCode={tripCode} me={me} />
       <RememberSection tripCode={tripCode} me={me} trip={trip} />
