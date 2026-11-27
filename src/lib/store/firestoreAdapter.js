@@ -115,7 +115,18 @@ export function createFirestoreAdapter() {
 
     // ---- Messages ----
     listenMessages: (code, cb, onError) => listen(col(code, 'messages'), cb, onError),
-    addMessage: (code, { text, pinned }) => add(col(code, 'messages'), { text, pinned: Boolean(pinned) }),
+    // Notes from the home page carry their author (by). Trips whose rules predate that field refuse it,
+    // so the note is saved without the author rather than lost.
+    async addMessage(code, { text, pinned, by }) {
+      const data = { text, pinned: Boolean(pinned) };
+      if (!by) return add(col(code, 'messages'), data);
+      try {
+        return await add(col(code, 'messages'), { ...data, by });
+      } catch (e) {
+        if (e?.code !== 'permission-denied') throw e;
+        return add(col(code, 'messages'), data);
+      }
+    },
     updateMessage: (code, id, data) => patch(ref(code, 'messages', id), data),
 
     async deleteMessage(code, id) {

@@ -32,7 +32,11 @@ export function formatRange(from, to) {
   const b = parseDay(to);
   if (!a) return b ? formatDay(to) : '';
   if (!b || b <= a) return formatDay(from);
-  return fmt({ day: 'numeric', month: 'long', year: 'numeric' }).formatRange(a, b);
+  const text = fmt({ day: 'numeric', month: 'long', year: 'numeric' }).formatRange(a, b);
+  // Same month gives "12–19 בינואר": a plain hyphen keeps the days in reading order in right-to-left text
+  // (an en dash flips them to "19–12").
+  const sameMonth = a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+  return sameMonth ? text.replace(/(\d)\s*–\s*(\d)/, '$1-$2') : text;
 }
 
 // Pinned first, then newest.

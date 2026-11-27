@@ -12,6 +12,7 @@ import Avatar from './components/Avatar.jsx';
 import CrewView from './components/CrewView.jsx';
 import GearView from './components/GearView.jsx';
 import HomeView from './components/HomeView.jsx';
+import MyListsView from './components/MyListsView.jsx';
 import { CreateTrip, PickMember, TripCodeForm } from './components/JoinScreen.jsx';
 import RequestsInbox from './components/RequestsInbox.jsx';
 import ShoppingList from './components/ShoppingList.jsx';
@@ -19,12 +20,14 @@ import Snowfall from './components/Snowfall.jsx';
 import { useWeather } from './hooks/useWeather.js';
 import { snowIntensity, windFactor } from './lib/weather.js';
 
+// The first tab is the trip itself; gear, the leaderboard and the game are the background pages.
 const TABS = [
-  { id: 'home', emoji: '✅' },
-  { id: 'crew', emoji: '👥' },
-  { id: 'gear', emoji: '🏂' },
-  { id: 'requests', emoji: '📬', whenUsed: true },
-  { id: 'admin', emoji: '🔐', adminOnly: true },
+  { id: 'home' },
+  { id: 'mine' },
+  { id: 'crew' },
+  { id: 'game', href: './ride.html' },
+  { id: 'requests', whenUsed: true },
+  { id: 'admin', adminOnly: true },
 ];
 
 function Dialog({ children, onClose }) {
@@ -180,6 +183,7 @@ export default function App() {
   const { tripCode, trip, members, requests, groups, messages, me, isAdmin, error, joinTrip, leaveTrip, chooseMe, setAdmin } =
     useTrip();
   const [tab, setTab] = useState('home');
+  const [show3d, setShow3d] = useState(false);
   const [draft, setDraft] = useState(null);
   const [adminDialog, setAdminDialog] = useState(false);
   const [toast, setToast] = useState(null);
@@ -249,31 +253,24 @@ export default function App() {
     const tabs = TABS.filter((x) => (!x.adminOnly || isAdmin) && (!x.whenUsed || usesRequests || tab === x.id));
     body = (
       <>
-        <nav className="tabs" aria-label={t.gear.sections}>
-          {tabs.map((x) => (
-            <button key={x.id} className={tab === x.id ? 'on' : ''} data-tab={x.id} onClick={() => setTab(x.id)}>
-              {tab === x.id && (
-                <motion.span layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', bounce: 0.25, duration: 0.45 }} />
-              )}
-              <span className="tab-content">
-                <span aria-hidden>{x.emoji}</span> <span className="tab-label">{t.tabs[x.id]}</span>
-              </span>
-              <AnimatePresence>
-                {x.id === 'requests' && pendingIn > 0 && (
-                  <motion.span
-                    key="dot"
-                    className="dot"
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    exit={{ scale: 0 }}
-                    transition={{ type: 'spring', stiffness: 500, damping: 18 }}
-                  >
-                    {pendingIn}
-                  </motion.span>
+        <nav className="tabs" aria-label={t.brand}>
+          {tabs.map((x) =>
+            x.href ? (
+              <a key={x.id} href={x.href} data-tab={x.id}>
+                <span className="tab-content"><span className="tab-label">{t.tabs[x.id]}</span></span>
+              </a>
+            ) : (
+              <button key={x.id} className={tab === x.id ? 'on' : ''} data-tab={x.id} onClick={() => setTab(x.id)}>
+                {tab === x.id && (
+                  <motion.span layoutId="tab-pill" className="tab-pill" transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }} />
                 )}
-              </AnimatePresence>
-            </button>
-          ))}
+                <span className="tab-content">
+                  <span className="tab-label">{t.tabs[x.id]}</span>
+                </span>
+                {x.id === 'requests' && pendingIn > 0 && <span className="dot">{pendingIn}</span>}
+              </button>
+            ),
+          )}
         </nav>
         <AnimatePresence mode="wait" initial={false}>
           <motion.main
@@ -288,30 +285,29 @@ export default function App() {
                 tripCode={tripCode}
                 trip={trip}
                 me={me}
+                members={members}
                 groups={groups}
                 messages={messages}
                 weather={weather}
                 isAdmin={isAdmin}
-                onGoGear={() => setTab('gear')}
                 onGoAdmin={() => setTab('admin')}
                 onToast={setToast}
               />
             )}
-            {tab === 'gear' && (
-              <GearView tripCode={tripCode} member={me} me={me} members={members} requests={requests} editable>
-                <ShoppingList me={me} members={members} requests={requests} onRequest={onRequest} />
-              </GearView>
+            {tab === 'mine' && (
+              <div className="mine-tab">
+                <MyListsView tripCode={tripCode} trip={trip} me={me} onShow3d={() => setShow3d(true)} />
+                {show3d ? (
+                  <GearView tripCode={tripCode} member={me} me={me} members={members} requests={requests} editable>
+                    <ShoppingList me={me} members={members} requests={requests} onRequest={onRequest} />
+                  </GearView>
+                ) : (
+                  <button className="btn show-3d" onClick={() => setShow3d(true)}>{t.list.all3d}</button>
+                )}
+              </div>
             )}
             {tab === 'crew' && (
-              <CrewView
-                tripCode={tripCode}
-                members={members}
-                groups={groups}
-                me={me}
-                isAdmin={isAdmin}
-                requests={requests}
-                onRequest={onRequest}
-              />
+              <CrewView tripCode={tripCode} members={members} me={me} requests={requests} onRequest={onRequest} />
             )}
             {tab === 'requests' && <RequestsInbox tripCode={tripCode} me={me} members={members} requests={requests} />}
             {tab === 'admin' && isAdmin && (
@@ -319,7 +315,6 @@ export default function App() {
                 tripCode={tripCode}
                 trip={trip}
                 members={members}
-                groups={groups}
                 messages={messages}
                 me={me}
                 setAdmin={setAdmin}
@@ -358,7 +353,7 @@ export default function App() {
         )}
         <header className="topbar">
           <div className="brand">
-            <span aria-hidden>🏔️</span> {t.brand}
+            {t.brand}
             {tripCode && me && <span className="trip-chip">{tripCode}</span>}
           </div>
           {me && trip && (

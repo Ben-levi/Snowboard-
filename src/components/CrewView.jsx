@@ -6,7 +6,6 @@ import { itemOf } from '../lib/store/index.js';
 import { badges, countByStatus, ownedCount, readiness } from '../lib/stats.js';
 import Avatar from './Avatar.jsx';
 import GearView from './GearView.jsx';
-import GroupsView from './GroupsView.jsx';
 import Leaderboard from './Leaderboard.jsx';
 
 function MemberCard({ member, isMe, onOpen }) {
@@ -132,11 +131,11 @@ function People({ tripCode, members, me, requests, onRequest }) {
   );
 }
 
-const VIEWS = ['people', 'groups', 'board'];
+const VIEWS = ['board', 'people'];
 
-// The crew tab: people, groups (apartment / car / family) and the leaderboard.
-export default function CrewView({ tripCode, members, groups, me, isAdmin, requests, onRequest }) {
-  const [view, setView] = useState('people');
+// Background page: the gear leaderboard, and everyone's gear with "who has…?".
+export default function CrewView({ tripCode, members, me, requests, onRequest }) {
+  const [view, setView] = useState('board');
   return (
     <div>
       <div className="sub-tabs" role="tablist">
@@ -148,7 +147,6 @@ export default function CrewView({ tripCode, members, groups, me, isAdmin, reque
         ))}
       </div>
       {view === 'people' && <People tripCode={tripCode} members={members} me={me} requests={requests} onRequest={onRequest} />}
-      {view === 'groups' && <GroupsView tripCode={tripCode} groups={groups} members={members} me={me} isAdmin={isAdmin} />}
       {view === 'board' && <Leaderboard members={members} me={me} />}
     </div>
   );

@@ -21,7 +21,7 @@ export default function FieldsForm({ fields, values, onSave, onCancel, submitLab
     <form className={`fields-form ${className}`} onSubmit={submit}>
       <div className="fields-grid">
         {fields.map((f) => (
-          <label key={f.id} className={`field${f.half ? ' half' : ''}`}>
+          <label key={f.id} className={`field${f.half ? ' half' : ''}${f.third ? ' third' : ''}`}>
             <span>{f.label}</span>
             {f.type === 'textarea' ? (
               <textarea rows={3} maxLength={500} value={draft[f.id]} onChange={(e) => set(f.id, e.target.value)} />
@@ -46,10 +46,3 @@ export default function FieldsForm({ fields, values, onSave, onCancel, submitLab
     </form>
   );
 }
-
-export const groupField = (groups) => ({
-  id: 'groupId',
-  type: 'select',
-  label: t.fields.group,
-  options: [{ value: '', label: t.home.noGroup }, ...groups.map((g) => ({ value: g.id, label: `${g.emoji} ${g.name}` }))],
-});

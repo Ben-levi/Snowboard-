@@ -20,6 +20,8 @@ describe('trip dates', () => {
 
   it('formats ranges in Hebrew', () => {
     expect(formatRange('2027-01-12', '2027-01-19')).toMatch(/ינואר/);
+    expect(formatRange('2027-01-12', '2027-01-19')).toContain('12-19');
+    expect(formatRange('2026-12-28', '2027-01-03')).not.toContain('2026-3');
     expect(formatRange('', '')).toBe('');
   });
 

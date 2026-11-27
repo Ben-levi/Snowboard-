@@ -1,16 +1,25 @@
 # 🏔️ Snow Crew
 
-A light, fun gear tracker for a group ski/snowboard trip. The UI is in **Hebrew** (right-to-left); all strings live in [`src/i18n/he.js`](src/i18n/he.js).
+A shared trip board for a group ski/snowboard trip to Andorra: one list, flights, weather and everyone's details in one place. The UI is in **Hebrew** (right-to-left); all strings live in [`src/i18n/he.js`](src/i18n/he.js).
 
-- **My list (הרשימה שלי)**: the first page, a personal checklist. **What to buy** (your own entries plus gear marked 🛒), **Don't forget** (free-form reminders with one-tap starter suggestions, plus trip-wide items from the admin), and **Packing**, the gear catalog as a flat tick-off list. One progress bar on top. Trip details, flights and "my details" are tucked into a collapsed section below, and admin messages show above the lists.
-- **Weather**: live conditions and a 7-day outlook for Pas de la Casa on the first page, from [Open-Meteo](https://open-meteo.com) (free, no API key, cached 30 minutes). The background snow reacts to it: heavier when it is snowing, pushed sideways by real wind. Tap the weather card for a puff of snow.
-- **My gear (הציוד שלי)**: a 3D rider on a dark studio stage (React Three Fiber). Drag to spin it, and tap a body part to open that section's gear dropdown. Snowboarders and skiers get their own model. Browsers without WebGL (or `?flat=1`) get a lightweight 2.5D SVG rider. Below it, **my to-do**: what's left to buy or borrow, and which friends can lend each item.
-- **Crew (החבר׳ה)**: three views:
-  - **people**: everyone's progress, plus a "who has…?" search
-  - **groups**: sub-groups (apartment, car, family), each with a shared list of things to bring or buy, and "I'll bring it"
-  - **leaderboard**: ranked by items owned, with a podium and badges
-- **Requests (בקשות)**: optional, and the tab only appears once someone has asked or been asked. Ask to borrow, and the owner lends or declines. Accepted items show as "borrowed from X" and "lent to Y".
-- **Admin (ניהול)**: behind the trip's admin password. Edit trip details, add trip-wide checklist items, post and pin messages, set each person's instructor, lessons, group and other details, manage groups, and change the password.
+The first page, **הטיול** (the trip), is everything the crew shares:
+
+- **Trip header:** name, resort, dates and a countdown, plus the logistics the admin fills in (lodging, meeting point, emergency contact, notes). Two chips show your next flight and how many list items are on you, and links jump to each section.
+- **Shared list (רשימה משותפת):** split into groups such as documents, apartment, car or shared gear. Anyone can add a group or an item, tick it off, tap "אני לוקח/ת" to take it on, or tap the item to add a note or hand it to someone else. Filters show everything, what's still open, or only what's on you.
+- **Weather (מזג האוויר באנדורה):** live conditions and a 7-day outlook for Pas de la Casa from [Open-Meteo](https://open-meteo.com) (free, no API key, refreshed every 30 minutes). The background snow follows it.
+- **Flights (טיסות):** add a flight number with its date and times. Everyone marks whether they're on it, and each flight shows a schedule-based status (in N days, today, in the air, done) and a **מעקב חי** link to the flight's live page on Flightradar24. The free ADS-B APIs don't allow browser requests, so live positions aren't pulled into the app.
+- **Notes (פתקים):** short notes anyone can post, with the author and date. You can delete your own; the admin can pin or delete any note.
+- **The crew (החבר׳ה):** each person's details: phone, flights, room, ski pass, rental and sizes (shoe, height, weight), insurance, instructor and personal notes. You edit your own; the admin can edit everyone's.
+
+On phones the sections stack (weather and flights first). On wide screens, weather, flights and notes sit beside the list.
+
+The background pages:
+
+- **My gear (הציוד שלי):** personal lists (what to buy, don't forget, packing from the gear catalog) and the 3D rider with each body part's gear.
+- **Ranking (דירוג):** the gear leaderboard with podium and badges, plus everyone's gear and a "who has…?" search for borrowing.
+- **Game (משחק):** the snowboard simulation (`ride.html`, below).
+- **Requests (בקשות):** optional, and the tab only appears once someone has asked or been asked. Ask to borrow, and the owner lends or declines.
+- **Admin (ניהול):** behind the trip's admin password. Edit trip details, add trip-wide checklist items, post and pin messages, set each person's instructor and lessons, and change the password.
 
 Join with a **trip code** (for example `ALPS26`). A new code asks for a trip name and an **admin password**, and the creator is logged in as admin. Others unlock admin mode from the profile menu. Share the invite link (`?trip=ALPS26`) from the profile menu.
 
@@ -24,14 +33,14 @@ npm run dev      # http://localhost:5173
 npm test         # unit tests for ranking/badges/status logic
 ```
 
-Without Firebase config the app runs in **demo mode**. Data stays in your browser, and new trips come with 4 sample friends, trip details, two groups and a welcome message so you can try everything (use "אני מישהו אחר" in the profile menu to switch people). The join screen also offers a ready-made **demo trip** (code `DEMO`) whose admin password is **`1234`**.
+Without Firebase config the app runs in **demo mode**. Data stays in your browser, and new trips come with 4 sample friends, trip details, flights, a shared list and notes so you can try everything (use "אני מישהו אחר" in the profile menu to switch people). The join screen also offers a ready-made **demo trip** (code `DEMO`) whose admin password is **`1234`**.
 
 ## Connect Firebase (so the crew shares one live list)
 
 1. Create a project at <https://console.firebase.google.com> (the free Spark plan is plenty).
 2. **Build → Authentication → Sign-in method** → enable **Anonymous**.
 3. **Build → Firestore Database** → create a database (production mode).
-4. **Firestore → Rules** → paste the contents of [`firestore.rules`](firestore.rules) → Publish.
+4. **Firestore → Rules** → paste the contents of [`firestore.rules`](firestore.rules) → Publish. Paste them again whenever the file changes. Notes need the current rules to save their author; with older rules they're saved without one.
 5. **Project settings → Your apps → Web app (`</>`)** → register an app and copy its config values.
 6. Locally: copy `.env.example` to `.env.local` and fill in the values.
 
@@ -51,7 +60,8 @@ src/i18n/he.js              every UI string (Hebrew)
 src/data/gearCatalog.js     gear sections + items (ski / snowboard aware)
 src/data/infoFields.js      trip details + personal details form fields
 src/lib/admin.js            admin password hashing + session check
-src/lib/groups.js           group lists: progress, who brings what
+src/lib/groups.js           the shared list: groups, items, notes, who takes what
+src/lib/flights.js          flight numbers, schedule status, live-tracking link
 src/lib/tripInfo.js         trip dates, countdown, message order
 src/lib/stats.js            owned count, readiness, badges, ranking
 src/lib/store/              Firestore adapter + localStorage demo adapter (same interface)
@@ -63,7 +73,8 @@ tools/blender/              scripts that build the rider models
 src/components/RiderFigure  the 2.5D parallax SVG rider (fallback + crew mini cards)
 src/ride/                   the snowboard simulation (ride.html): terrain, physics, lifts, runs, HUD
 tools/resort/               bakes real terrain + OpenStreetMap data for the simulation
-src/components/…            HomeView, GearView, GearSection, ShoppingList, CrewView, GroupsView,
+src/components/HomeView     the first page: SharedList, WeatherCard, FlightsCard, NotesCard, PeopleCard
+src/components/…            MyListsView, GearView, GearSection, ShoppingList, CrewView,
                             Leaderboard, RequestsInbox, AdminPanel, JoinScreen
 ```
 

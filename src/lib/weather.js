@@ -71,7 +71,7 @@ export function dayVerdict(day) {
   return { emoji: '🙂', label: 'סביר' };
 }
 
-const CACHE_KEY = 'snowcrew:weather:v1';
+const CACHE_KEY = 'snowcrew:weather:v2';
 const TTL = 30 * 60 * 1000;
 
 function readCache(now) {
@@ -90,7 +90,7 @@ export async function fetchWeather({ fetchImpl = fetch, now = Date.now(), signal
   if (cached) return cached;
   const res = await fetchImpl(WEATHER_URL(), { signal });
   if (!res.ok) throw new Error(`weather ${res.status}`);
-  const data = parseWeather(await res.json());
+  const data = { ...parseWeather(await res.json()), fetchedAt: now };
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ at: now, data }));
   } catch {

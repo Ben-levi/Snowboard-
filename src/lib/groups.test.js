@@ -1,39 +1,49 @@
 import { describe, expect, it } from 'vitest';
-import { groupItems, groupMembers, groupProgress, myGroupTasks } from './groups.js';
+import { filterItems, groupItems, groupProgress, listProgress, makeItem, myOpenTasks, updatedItem } from './groups.js';
 
-const flat = {
+const docs = {
   id: 'g1',
-  name: 'דירה 1',
-  emoji: '🏠',
+  name: 'מסמכים',
+  emoji: '',
   items: {
-    a: { label: 'קפה', status: 'buy', by: null, createdAt: 2 },
-    b: { label: 'רמקול', status: 'have', by: 'maya', createdAt: 1 },
-    c: { label: 'משחק קופסה', status: 'buy', by: 'omer', createdAt: 3 },
+    a: { label: 'דרכון', done: false, by: null, note: '', createdAt: 2 },
+    b: { label: 'ביטוח', done: true, by: 'maya', note: 'מודפס', createdAt: 1 },
+    c: { label: 'כרטיסי טיסה', done: false, by: 'omer', createdAt: 3 },
   },
 };
-const car = { id: 'g2', name: 'רכב', emoji: '🚗', items: { d: { label: 'שרשראות', status: 'buy', by: 'maya', createdAt: 1 } } };
+// Saved before the shared list: status 'have' / 'buy' instead of done.
+const legacy = { id: 'g2', name: 'רכב', emoji: '🚗', items: { d: { label: 'שרשראות', status: 'have', by: 'maya', createdAt: 1 }, e: { label: 'מגרד', status: 'buy', by: 'maya', createdAt: 2 } } };
 
-describe('groups', () => {
-  it('lists items oldest first', () => {
-    expect(groupItems(flat).map((i) => i.id)).toEqual(['b', 'a', 'c']);
+describe('shared list', () => {
+  it('lists items oldest first with defaults filled in', () => {
+    expect(groupItems(docs).map((i) => i.id)).toEqual(['b', 'a', 'c']);
+    expect(groupItems(docs)[2]).toMatchObject({ note: '', done: false });
     expect(groupItems({})).toEqual([]);
   });
 
-  it('counts items someone has or will bring', () => {
-    expect(groupProgress(flat)).toEqual({ done: 2, total: 3 });
-    expect(groupProgress({ items: {} })).toEqual({ done: 0, total: 0 });
+  it('reads old items', () => {
+    expect(groupItems(legacy).map((i) => i.done)).toEqual([true, false]);
   });
 
-  it('finds members of a group', () => {
-    const members = [{ id: 'maya', groupId: 'g1' }, { id: 'omer', groupId: 'g2' }, { id: 'noa' }];
-    expect(groupMembers(members, 'g1').map((m) => m.id)).toEqual(['maya']);
+  it('counts done items per group and overall', () => {
+    expect(groupProgress(docs)).toEqual({ done: 1, total: 3 });
+    expect(listProgress([docs, legacy])).toEqual({ done: 2, total: 5 });
   });
 
-  it('collects what I said I would bring across groups', () => {
-    const tasks = myGroupTasks([flat, car], 'maya');
-    expect(tasks.map((t) => [t.label, t.groupName])).toEqual([
-      ['רמקול', 'דירה 1'],
-      ['שרשראות', 'רכב'],
-    ]);
+  it('filters open and mine', () => {
+    const items = groupItems(docs);
+    expect(filterItems(items, 'open', 'maya').map((i) => i.id)).toEqual(['a', 'c']);
+    expect(filterItems(items, 'mine', 'omer').map((i) => i.id)).toEqual(['c']);
+    expect(filterItems(items, 'all', 'omer')).toHaveLength(3);
+  });
+
+  it('collects what is still on me', () => {
+    expect(myOpenTasks([docs, legacy], 'maya').map((t) => [t.label, t.groupName])).toEqual([['מגרד', 'רכב']]);
+  });
+
+  it('builds and updates stored items', () => {
+    expect(makeItem('  מטען  ', 5)).toEqual({ label: 'מטען', done: false, by: null, note: '', createdAt: 5 });
+    const item = groupItems(legacy)[1];
+    expect(updatedItem(item, { done: true, note: 'x' })).toEqual({ label: 'מגרד', done: true, by: 'maya', note: 'x', createdAt: 2 });
   });
 });

@@ -40,9 +40,10 @@ service cloud.firestore {
     }
 
     function validMessage(d) {
-      return d.keys().hasOnly(['text', 'pinned', 'createdAt', 'updatedAt'])
+      return d.keys().hasOnly(['text', 'pinned', 'by', 'createdAt', 'updatedAt'])
         && d.text is string && d.text.size() > 0 && d.text.size() <= 500
-        && d.pinned is bool;
+        && d.pinned is bool
+        && (!('by' in d) || shortString(d.by, 40));
     }
 
     match /trips/{code} {

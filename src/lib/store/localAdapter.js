@@ -178,7 +178,7 @@ export function createLocalAdapter() {
 
     // ---- Messages ----
     listenMessages: (code, cb) => listen(code, 'messages', cb),
-    addMessage: async (code, { text, pinned }) => add(code, 'messages', { text, pinned: Boolean(pinned) }),
+    addMessage: async (code, { text, pinned, by }) => add(code, 'messages', { text, pinned: Boolean(pinned), ...(by ? { by } : {}) }),
     updateMessage: async (code, id, value) => patch(code, 'messages', id, value),
     deleteMessage: async (code, id) => remove(code, 'messages', id),
 
